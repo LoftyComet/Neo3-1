@@ -27,3 +27,20 @@ def create_audio_record(db: Session, record: AudioRecordCreate, file_path: str):
 
 def get_records(db: Session, skip: int = 0, limit: int = 100):
     return db.query(AudioRecord).offset(skip).limit(limit).all()
+
+def get_record(db: Session, record_id: str):
+    return db.query(AudioRecord).filter(AudioRecord.id == record_id).first()
+
+def update_audio_record(db: Session, record_id: str, update_data: dict):
+    db_record = get_record(db, record_id)
+    if not db_record:
+        return None
+    
+    for key, value in update_data.items():
+        if hasattr(db_record, key):
+            setattr(db_record, key, value)
+    
+    db.add(db_record)
+    db.commit()
+    db.refresh(db_record)
+    return db_record
