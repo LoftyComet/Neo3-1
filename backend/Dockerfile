@@ -19,8 +19,9 @@ RUN pip install --no-cache-dir -r requirements.txt -i https://pypi.tuna.tsinghua
 
 # 关键：直接拷贝到 /app 目录下
 COPY . .
-# 创建软链接，让 /app/backend 指向自己，从而满足 from backend.app 的导入
-RUN ln -s /app /app/backend
+
+# 创建上传目录
+RUN mkdir -p /app/static/uploads
 
 # 环境变量
 ENV PYTHONPATH=/app

@@ -1,6 +1,6 @@
 from sqlalchemy.orm import Session
-from backend.app.models.audio import AudioRecord
-from backend.app.schemas.audio import AudioRecordCreate
+from app.models.audio import AudioRecord
+from app.schemas.audio import AudioRecordCreate
 from typing import Optional, List
 from uuid import UUID
 

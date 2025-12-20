@@ -1,6 +1,6 @@
 import { AudioRecord } from "@/types";
 
-const API_BASE_URL = "http://localhost:8000" || "http://114.132.228.27:8000";
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "http://114.132.228.27:8000";
 
 // Helper to map backend response to frontend type
 const mapRecord = (record: any): AudioRecord => {

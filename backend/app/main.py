@@ -4,9 +4,10 @@ from fastapi import FastAPI, Depends, HTTPException, File, UploadFile, Form, Bac
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from sqlalchemy.orm import Session
-from backend.app import models, schemas, crud
-from backend.app.core.database import SessionLocal, engine
-from backend.app.services import audio_service
+from app import models, schemas, crud
+from app.core.database import SessionLocal, engine
+from app.services import audio_service
+from app.routes import audio as audio_router
 
 # 创建必要的数据库扩展
 #Deli added 
@@ -37,8 +38,11 @@ app.add_middleware(
 
 # Mount static files
 # Ensure the directory exists
-os.makedirs("backend/static/uploads", exist_ok=True)
-app.mount("/static", StaticFiles(directory="backend/static"), name="static")
+os.makedirs("static/uploads", exist_ok=True)
+app.mount("/static", StaticFiles(directory="static"), name="static")
+
+# Register routers
+app.include_router(audio_router.router, prefix="/api/audios", tags=["audios"])
 
 # Dependency
 def get_db():
