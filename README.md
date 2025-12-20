@@ -18,10 +18,12 @@ npm install
 `docker run -d --name echomap-db -e POSTGRES_USER=postgres -e POSTGRES_PASSWORD=postgres -e POSTGRES_DB=echomap -p 5432:5432 postgis/postgis:16-3.4`
 
 #### 进入容器
+`docker exec -it echomap-db psql -U postgres -d echomap`
+
 -- 开启 PostGIS (镜像通常已开启，但确认一下)
 `CREATE EXTENSION IF NOT EXISTS postgis;`
 -- 开启 Vector (如果镜像里没有，这一步会报错)
-`docker exec -it echomap-db psql -U postgres -d echomap`
+`CREATE EXTENSION IF NOT EXISTS vector;`
 
 > 简单的解决方案
 1. 删除旧容器（如果有）
