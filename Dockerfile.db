@@ -1,0 +1,15 @@
+FROM postgres:16
+
+# 1. 切换阿里源
+RUN sed -i 's/deb.debian.org/mirrors.aliyun.com/g' /etc/apt/sources.list.d/debian.sources && \
+    apt-get update && apt-get install -y --no-install-recommends \
+    postgresql-16-postgis-3 \
+    postgresql-16-postgis-3-scripts \
+    # 直接安装 pgvector 的系统包，避开 git clone
+    postgresql-16-pgvector \
+    && rm -rf /var/lib/apt/lists/*
+
+# 2. 初始化脚本：确保容器启动时自动激活扩展
+RUN mkdir -p /docker-entrypoint-initdb.d && \
+    echo "CREATE EXTENSION IF NOT EXISTS postgis;" > /docker-entrypoint-initdb.d/postgis.sql && \
+    echo "CREATE EXTENSION IF NOT EXISTS vector;" > /docker-entrypoint-initdb.d/vector.sql

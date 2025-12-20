@@ -1,0 +1,61 @@
+version: '3.8'
+
+services:
+  # --- 新增：Nginx 反向代理与 SSL 管理器 ---
+  nginx-proxy:
+    image: 'jc21/nginx-proxy-manager:latest'
+    container_name: echomap-proxy
+    restart: always
+    ports:
+      - '80:80'    # HTTP 访问
+      - '443:443'  # HTTPS 访问 (麦克风必须)
+      - '81:81'    # 管理后台端口
+    volumes:
+      - ./nginx_data:/data
+      - ./nginx_letsencrypt:/etc/letsencrypt
+
+  db:
+    build:
+      context: .
+      dockerfile: Dockerfile.db
+    container_name: echomap-db
+    restart: always
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: echomap
+    volumes:
+      - postgres_data:/var/lib/postgresql/data:z
+    ports:
+      - "5432:5432"
+
+  backend:
+    build: ./backend
+    container_name: echomap-backend
+    restart: always
+    depends_on:
+      - db
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./backend/static/uploads:/app/static/uploads:z
+    environment:
+      PYTHONPATH: /app:/app/..
+      DATABASE_URL: postgresql://postgres:postgres@db:5432/echomap
+      LLM_API_KEY: ${LLM_API_KEY}
+      LLM_BASE_URL: ${LLM_BASE_URL}
+      LLM_MODEL_NAME: ${LLM_MODEL_NAME}
+
+  frontend:
+    build: ./frontend
+    container_name: echomap-frontend
+    restart: always
+    ports:
+      - "3000:3000"
+    environment:
+      # --- 修改：指向您的 HTTPS 域名地址 ---
+      # 如果您给后端也配了域名，这里填 https://api.yourdomain.com
+      NEXT_PUBLIC_API_BASE_URL: https://neo4.top:8000
+
+volumes:
+  postgres_data:
