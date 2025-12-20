@@ -65,8 +65,20 @@ EchoMap 是一个基于地理位置的声音社交平台。它利用 AI 技术�
 | `generated_story` | Text | AI 基于音频生成的短故事/描述 |
 | `emotion_tag` | String | 情感标签 (如: 宁静, 喧闹, 怀旧) |
 | `scene_tags` | JSON/Array | 场景标签 (如: ["茶馆", "方言", "下雨"]) |
-| `embedding` | Vector(N) | 音频/文本混合向量 (pgvector) |
+| `embedding` | Vector(N) | 音频/文本混合向量 (pgvector) | 
 | `created_at` | DateTime | 创建时间 |
+
+** Front TBD
+对于“听觉叙事”这个概念，我们需要一种沉浸式（Immersive）、**灵动（Fluid）且具有连接感（Connectivity）**的设计语言。普通的 Leaflet 地图和简单的 DIV 点无法满足“年薪百万”的视觉标准。我们需要 WebGL 的力量。
+🎨 设计哲学 (Design Philosophy)
+材质 (Material): 使用 Glassmorphism (毛玻璃) 结合深色模式 (Dark Mode)。地图不仅是背景，是深邃的夜空或海洋；UI 悬浮其上，通透且高级。
+动效 (Motion): 拒绝生硬的显隐。所有交互必须符合物理直觉（Spring Physics）。
+核心视效 - "Sonic Rays" (声之射线): 当系统匹配相似声音时，我们不只是列出列表，而是要在地图上绘制出Great Circle Arcs (大圆弧)。这些光束将从用户的当前位置（原点）发散，飞向地球另一端的匹配点，寓意“声音穿越时空”。
+🛠 技术选型 (Tech Stack)
+Core: React 18 + TypeScript (强类型保障)
+Map Engine: Mapbox GL JS (必须使用 Mapbox，Leaflet 性能和 3D 表现力不足以支撑百万级视效)
+Animation: Framer Motion (UI 交互) + Mapbox Native Animations (地图光束)
+Styling: Tailwind CSS (快速构建布局)
 
 ---
 
