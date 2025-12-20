@@ -39,6 +39,21 @@ npm install
 `docker exec -it echomap-db psql -U postgres -d echomap -c "CREATE EXTENSION IF NOT EXISTS postgis;"
 docker exec -it echomap-db psql -U postgres -d echomap -c "CREATE EXTENSION IF NOT EXISTS vector;"`
 
+
+## 数据初始化 (重要)
+
+为了启用**语义搜索**和**时空共鸣**功能，需要初始化数据库并生成向量数据。
+
+### 1. 导入基础数据
+使用数据库管理工具（如 DBeaver, pgAdmin）或命令行，运行 `SQL.txt` 中的 SQL 语句。这将插入 100 条分布在全国各地的合成音频数据。
+
+### 2. 生成 Embedding 向量
+由于合成数据默认没有向量信息（无法被搜索到），需要运行初始化脚本来调用 AI 模型生成向量。
+
+1. 确保后端环境已配置好 `EMBEDDING_API_KEY` (在 `backend/app/services/audio_service.py` 或环境变量中)。
+2. 在项目根目录下运行：
+   ```bash
+   python -m backend.init_embeddings
 ## 运行项目
 
 ### 启动后端
