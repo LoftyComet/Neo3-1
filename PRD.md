@@ -9,6 +9,7 @@
 | v1.0 | 2025-12-20 | Gem (AI) | 待开发 | 基于初始概念生成的 MVP 规格 |
 | v1.1 | 2025-12-20 | Copilot | 开发中 | 后端基础架构已搭建 (DB, Models) |
 | v1.2 | 2025-12-20 | Copilot | 开发中 | 后端 AI 服务集成 (External API + DeepSeek), 前端基础地图组件 (OSM iframe) |
+| v1.3 | 2025-12-20 | Copilot | 验证通过 | 后端核心流程 (Upload -> AI -> DB) 经 `test_user_flow.py` 验证通过。补充环境变量配置说明。 |
 
 ## 1. 项目概述 (Overview)
 
@@ -80,6 +81,17 @@ Core: React 18 + TypeScript (强类型保障)
 Map Engine: Mapbox GL JS (必须使用 Mapbox，Leaflet 性能和 3D 表现力不足以支撑百万级视效)
 Animation: Framer Motion (UI 交互) + Mapbox Native Animations (地图光束)
 Styling: Tailwind CSS (快速构建布局)
+
+### 1.4 环境配置 (Configuration)
+
+后端服务依赖以下环境变量 (Environment Variables)：
+
+| 变量名 | 说明 | 默认值/示例 |
+| --- | --- | --- |
+| `LLM_API_KEY` | DeepSeek/OpenAI API Key | `sk-xxx` |
+| `LLM_BASE_URL` | LLM API Base URL | `https://api.deepseek.com` |
+| `LLM_MODEL_NAME` | 模型名称 | `deepseek-chat` |
+| `DATABASE_URL` | PostgreSQL 连接串 | `postgresql://user:pass@localhost/dbname` |
 
 ---
 
@@ -253,7 +265,7 @@ class AIService:
 
 1. **Backend**: 集成外部音频分析 API 和 DeepSeek LLM。 [已完成]
 2. **Backend**: 编写 `AIService`，实现 `process_audio` 异步任务。 [已完成]
-3. **Backend**: 测试音频上传后，数据库自动生成 story 和 transcript。 [已完成]
+3. **Backend**: 测试音频上传后，数据库自动生成 story 和 transcript。 [已验证 - test_user_flow.py]
 
 ### 第四阶段：地图交互与共鸣 (Day 7+)
 
@@ -265,7 +277,7 @@ class AIService:
 
 ## 7. 下一步行动计划 (Next Steps)
 
-基于当前进度（后端核心功能已就绪，前端基础组件已搭建），接下来的重点是前后端联调和体验优化。
+基于当前进度（后端核心功能已通过 `test_user_flow.py` 验证），接下来的重点是前端功能的实装和前后端联调。
 
 1. **Frontend**: 在 `frontend/src/app/components/RecordButton.tsx` 中移除 `setTimeout` 模拟，调用后端 `POST /api/v1/records/upload` 接口。
 2. **Frontend**: 升级 `MapComponent` 为 Mapbox GL JS，实现更酷炫的视觉效果。

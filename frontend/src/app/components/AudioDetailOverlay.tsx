@@ -1,8 +1,9 @@
 // src/app/components/AudioDetailOverlay.tsx
 import React, { useState, useRef, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { X, Play, Pause, Heart, Share2, ChevronLeft, ChevronRight } from 'lucide-react';
+import { X, Play, Pause, Heart, HelpCircle, ChevronLeft, ChevronRight } from 'lucide-react';
 import { AudioRecord } from '@/types';
+import { api } from '@/services/api';
 
 interface DetailProps {
   record: AudioRecord;
@@ -14,8 +15,92 @@ interface DetailProps {
 export const AudioDetailOverlay: React.FC<DetailProps> = ({ record, onClose, onNext, onPrev }) => {
   const [isPlaying, setIsPlaying] = useState(false);
   const [playbackTime, setPlaybackTime] = useState(0);
-  const [duration, setDuration] = useState(30); // Mock duration for demo
+  const [duration, setDuration] = useState(0);
+  const [likeCount, setLikeCount] = useState(record.likeCount || 0);
+  const [questionCount, setQuestionCount] = useState(record.questionCount || 0);
+  
+  // Local state to track if user has liked/questioned this session
+  const [isLiked, setIsLiked] = useState(false);
+  const [isQuestioned, setIsQuestioned] = useState(false);
+  
   const audioRef = useRef<HTMLAudioElement | null>(null);
+
+  // Update local state when record changes
+  useEffect(() => {
+    setLikeCount(record.likeCount || 0);
+    setQuestionCount(record.questionCount || 0);
+    
+    // Check local storage for state
+    const likedRecords = JSON.parse(localStorage.getItem('liked_records') || '[]');
+    const questionedRecords = JSON.parse(localStorage.getItem('questioned_records') || '[]');
+    
+    setIsLiked(likedRecords.includes(record.id));
+    setIsQuestioned(questionedRecords.includes(record.id));
+  }, [record]);
+
+  const handleLike = async () => {
+    const likedRecords = JSON.parse(localStorage.getItem('liked_records') || '[]');
+    
+    if (isLiked) {
+      // Unlike
+      try {
+        setLikeCount(prev => Math.max(0, prev - 1));
+        setIsLiked(false);
+        const newLiked = likedRecords.filter((id: string) => id !== record.id);
+        localStorage.setItem('liked_records', JSON.stringify(newLiked));
+        await api.unlikeRecord(record.id);
+      } catch (error) {
+        console.error("Failed to unlike", error);
+        setLikeCount(prev => prev + 1);
+        setIsLiked(true);
+      }
+    } else {
+      // Like
+      try {
+        setLikeCount(prev => prev + 1);
+        setIsLiked(true);
+        likedRecords.push(record.id);
+        localStorage.setItem('liked_records', JSON.stringify(likedRecords));
+        await api.likeRecord(record.id);
+      } catch (error) {
+        console.error("Failed to like", error);
+        setLikeCount(prev => prev - 1);
+        setIsLiked(false);
+      }
+    }
+  };
+
+  const handleQuestion = async () => {
+    const questionedRecords = JSON.parse(localStorage.getItem('questioned_records') || '[]');
+
+    if (isQuestioned) {
+      // Unquestion
+      try {
+        setQuestionCount(prev => Math.max(0, prev - 1));
+        setIsQuestioned(false);
+        const newQuestioned = questionedRecords.filter((id: string) => id !== record.id);
+        localStorage.setItem('questioned_records', JSON.stringify(newQuestioned));
+        await api.unquestionRecord(record.id);
+      } catch (error) {
+        console.error("Failed to unquestion", error);
+        setQuestionCount(prev => prev + 1);
+        setIsQuestioned(true);
+      }
+    } else {
+      // Question
+      try {
+        setQuestionCount(prev => prev + 1);
+        setIsQuestioned(true);
+        questionedRecords.push(record.id);
+        localStorage.setItem('questioned_records', JSON.stringify(questionedRecords));
+        await api.questionRecord(record.id);
+      } catch (error) {
+        console.error("Failed to question", error);
+        setQuestionCount(prev => prev - 1);
+        setIsQuestioned(false);
+      }
+    }
+  };
 
   useEffect(() => {
     // Reset state when record changes
@@ -208,9 +293,16 @@ export const AudioDetailOverlay: React.FC<DetailProps> = ({ record, onClose, onN
                <span key={tag} className="text-xs text-cyan-300">#{tag}</span>
              ))}
            </div>
-           <div className="flex space-x-3">
-             <Heart size={20} className="text-gray-400 hover:text-red-500 transition cursor-pointer" />
-             <Share2 size={20} className="text-gray-400 hover:text-white transition cursor-pointer" />
+           <div className="flex space-x-6">
+             <button onClick={handleLike} className="flex items-center space-x-1 group">
+               <Heart size={20} className={`transition ${isLiked ? 'fill-red-500 text-red-500' : 'text-gray-400 group-hover:text-red-500'}`} />
+               <span className="text-xs text-gray-400 group-hover:text-white">{likeCount}</span>
+             </button>
+             
+             <button onClick={handleQuestion} className="flex items-center space-x-1 group">
+               <HelpCircle size={20} className={`transition ${isQuestioned ? 'text-yellow-500' : 'text-gray-400 group-hover:text-yellow-500'}`} />
+               <span className="text-xs text-gray-400 group-hover:text-white">{questionCount}</span>
+             </button>
            </div>
         </div>
       </div>

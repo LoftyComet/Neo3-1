@@ -23,6 +23,8 @@ class AudioRecord(AudioRecordBase):
     user_id: Optional[UUID] = None
     file_path: str
     created_at: datetime
+    like_count: int = 0
+    question_count: int = 0
     
     # 注意：通常不直接返回 embedding 向量给前端，除非有特殊需求
     

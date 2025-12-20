@@ -35,6 +35,14 @@ def get_db():
     finally:
         db.close()
 
+@app.get("/")
+def read_root():
+    return {"message": "Sound Memory Backend is running"}
+
+@app.get("/health")
+def health_check():
+    return {"status": "ok"}
+
 # --- User Endpoints ---
 
 @app.post("/users/", response_model=schemas.User)
@@ -102,6 +110,34 @@ def get_latest_records(
 @app.get("/api/v1/records/{record_id}", response_model=schemas.AudioRecord)
 def read_audio_record(record_id: str, db: Session = Depends(get_db)):
     record = crud.audio.get_record(db, record_id=record_id)
+    if record is None:
+        raise HTTPException(status_code=404, detail="Record not found")
+    return record
+
+@app.post("/api/v1/records/{record_id}/like", response_model=schemas.AudioRecord)
+def like_audio_record(record_id: str, db: Session = Depends(get_db)):
+    record = crud.audio.increment_like(db, record_id=record_id)
+    if record is None:
+        raise HTTPException(status_code=404, detail="Record not found")
+    return record
+
+@app.delete("/api/v1/records/{record_id}/like", response_model=schemas.AudioRecord)
+def unlike_audio_record(record_id: str, db: Session = Depends(get_db)):
+    record = crud.audio.decrement_like(db, record_id=record_id)
+    if record is None:
+        raise HTTPException(status_code=404, detail="Record not found")
+    return record
+
+@app.post("/api/v1/records/{record_id}/question", response_model=schemas.AudioRecord)
+def question_audio_record(record_id: str, db: Session = Depends(get_db)):
+    record = crud.audio.increment_question(db, record_id=record_id)
+    if record is None:
+        raise HTTPException(status_code=404, detail="Record not found")
+    return record
+
+@app.delete("/api/v1/records/{record_id}/question", response_model=schemas.AudioRecord)
+def unquestion_audio_record(record_id: str, db: Session = Depends(get_db)):
+    record = crud.audio.decrement_question(db, record_id=record_id)
     if record is None:
         raise HTTPException(status_code=404, detail="Record not found")
     return record

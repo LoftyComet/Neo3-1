@@ -10,6 +10,8 @@ export interface AudioRecord {
   duration?: number;
   fileSize?: number;
   format?: string;
+  likeCount?: number;
+  questionCount?: number;
 }
 
 export interface MapViewState {

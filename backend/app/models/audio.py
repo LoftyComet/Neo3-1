@@ -34,6 +34,10 @@ class AudioRecord(Base):
     # 这里暂时设置为 768，具体取决于使用的模型
     embedding = Column(Vector(768), nullable=True)
     
+    # 交互数据
+    like_count = Column(Integer, default=0)
+    question_count = Column(Integer, default=0)
+    
     created_at = Column(DateTime, default=datetime.utcnow)
 
     # Relationship

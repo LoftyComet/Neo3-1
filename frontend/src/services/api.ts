@@ -15,9 +15,8 @@ const mapRecord = (record: any): AudioRecord => {
     story: record.generated_story || "No story generated yet.",
     audioUrl: `${API_BASE_URL}/static/uploads/${filename}`,
     createdAt: record.created_at,
-    duration: record.duration,
-    fileSize: record.file_size,
-    format: record.format,
+    likeCount: record.like_count || 0,
+    questionCount: record.question_count || 0,
   };
 };
 
@@ -63,6 +62,42 @@ export const api = {
     });
 
     if (!response.ok) throw new Error("Upload failed");
+    const data = await response.json();
+    return mapRecord(data);
+  },
+
+  likeRecord: async (recordId: string) => {
+    const response = await fetch(`${API_BASE_URL}/api/v1/records/${recordId}/like`, {
+      method: "POST",
+    });
+    if (!response.ok) throw new Error("Failed to like record");
+    const data = await response.json();
+    return mapRecord(data);
+  },
+
+  unlikeRecord: async (recordId: string) => {
+    const response = await fetch(`${API_BASE_URL}/api/v1/records/${recordId}/like`, {
+      method: "DELETE",
+    });
+    if (!response.ok) throw new Error("Failed to unlike record");
+    const data = await response.json();
+    return mapRecord(data);
+  },
+
+  questionRecord: async (recordId: string) => {
+    const response = await fetch(`${API_BASE_URL}/api/v1/records/${recordId}/question`, {
+      method: "POST",
+    });
+    if (!response.ok) throw new Error("Failed to question record");
+    const data = await response.json();
+    return mapRecord(data);
+  },
+
+  unquestionRecord: async (recordId: string) => {
+    const response = await fetch(`${API_BASE_URL}/api/v1/records/${recordId}/question`, {
+      method: "DELETE",
+    });
+    if (!response.ok) throw new Error("Failed to unquestion record");
     const data = await response.json();
     return mapRecord(data);
   }

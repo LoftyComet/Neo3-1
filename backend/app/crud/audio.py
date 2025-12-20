@@ -49,6 +49,44 @@ def update_audio_record(db: Session, record_id: str, update_data: dict):
         return None
     
     for key, value in update_data.items():
+        setattr(db_record, key, value)
+        
+    db.commit()
+    db.refresh(db_record)
+    return db_record
+
+def increment_like(db: Session, record_id: str):
+    db_record = get_record(db, record_id)
+    if db_record:
+        db_record.like_count += 1
+        db.commit()
+        db.refresh(db_record)
+    return db_record
+
+def decrement_like(db: Session, record_id: str):
+    db_record = get_record(db, record_id)
+    if db_record and db_record.like_count > 0:
+        db_record.like_count -= 1
+        db.commit()
+        db.refresh(db_record)
+    return db_record
+
+def increment_question(db: Session, record_id: str):
+    db_record = get_record(db, record_id)
+    if db_record:
+        db_record.question_count += 1
+        db.commit()
+        db.refresh(db_record)
+    return db_record
+
+def decrement_question(db: Session, record_id: str):
+    db_record = get_record(db, record_id)
+    if db_record and db_record.question_count > 0:
+        db_record.question_count -= 1
+        db.commit()
+        db.refresh(db_record)
+    return db_record
+    for key, value in update_data.items():
         if hasattr(db_record, key):
             setattr(db_record, key, value)
     
