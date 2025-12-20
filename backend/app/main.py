@@ -92,10 +92,26 @@ async def upload_audio(
 
 @app.get("/api/v1/records/map", response_model=list[schemas.AudioRecord])
 def get_map_records(
+    min_lat: Optional[float] = None,
+    max_lat: Optional[float] = None,
+    min_lng: Optional[float] = None,
+    max_lng: Optional[float] = None,
     skip: int = 0, 
     limit: int = 100, 
     db: Session = Depends(get_db)
 ):
+    # 如果提供了完整的边界参数，则进行空间查询
+    if all(v is not None for v in [min_lat, max_lat, min_lng, max_lng]):
+        return crud.audio.get_records_in_bounds(
+            db=db,
+            min_lat=min_lat,
+            max_lat=max_lat,
+            min_lng=min_lng,
+            max_lng=max_lng,
+            limit=limit
+        )
+    
+    # 否则降级为普通分页查询
     records = crud.audio.get_records(db, skip=skip, limit=limit)
     return records
 

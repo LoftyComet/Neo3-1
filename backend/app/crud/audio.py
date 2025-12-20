@@ -54,3 +54,24 @@ def update_audio_record(db: Session, record_id: str, update_data: dict):
     db.commit()
     db.refresh(db_record)
     return db_record
+
+def get_records_in_bounds(
+    db: Session, 
+    min_lat: float, 
+    max_lat: float, 
+    min_lng: float, 
+    max_lng: float,
+    limit: int = 100
+):
+    """
+    查询指定矩形区域内的音频记录
+    """
+    # 使用 ST_MakeEnvelope 构建矩形区域 (SRID 4326)
+    # 参数顺序: min_lng, min_lat, max_lng, max_lat, srid
+    bbox = func.ST_MakeEnvelope(min_lng, min_lat, max_lng, max_lat, 4326)
+    
+    return db.query(AudioRecord).filter(
+        # 使用 && 操作符进行边界框重叠查询 (利用空间索引)
+        # 或者使用 ST_Within(AudioRecord.location_geo, bbox)
+        AudioRecord.location_geo.ST_Within(bbox)
+    ).limit(limit).all()
