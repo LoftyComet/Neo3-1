@@ -10,3 +10,4 @@ shapely
 pgvector
 alembic
 pydantic-settings
+httpx

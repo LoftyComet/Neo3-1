@@ -27,7 +27,7 @@ docker exec -it echomap-db psql -U postgres -d echomap -c "CREATE EXTENSION IF N
 ## 运行项目
 
 ### 启动后端
-`uvicorn backend.main:app --reload`
+`uvicorn backend.app.main:app --reload`
 
 ### 启动前端
 `cd frontend
