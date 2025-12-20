@@ -30,6 +30,10 @@ class AudioRecord(Base):
     emotion_tag = Column(String, nullable=True)
     scene_tags = Column(JSON, nullable=True) # 存储字符串数组
     
+    # 新增：行政区划字段，用于精准搜索和推荐
+    city = Column(String, nullable=True, index=True)     # 例如：上海市
+    district = Column(String, nullable=True, index=True) # 例如：黄浦区
+    
     # 向量嵌入 (假设维度为 1536，例如 OpenAI embedding，或者 768 for others)
     # 这里暂时设置为 768，具体取决于使用的模型
     embedding = Column(Vector(768), nullable=True)

@@ -13,6 +13,9 @@ class AudioRecordBase(BaseModel):
     scene_tags: Optional[List[str]] = None
     transcript: Optional[str] = None
     generated_story: Optional[str] = None
+    # 新增字段
+    city: Optional[str] = None
+    district: Optional[str] = None
 
 class AudioRecordCreate(AudioRecordBase):
     # 上传时可能只需要 lat/lng，其他由后台生成
