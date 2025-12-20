@@ -1,6 +1,7 @@
 import httpx
 import json
 import logging
+import asyncio
 from typing import Dict, Any, Optional
 
 # Configure logging
@@ -12,81 +13,55 @@ class AIService:
         self.api_url = "https://u570751-8ln3hmx6jjjqkskb3rez.westc.gpuhub.com:8443/analyze"
         self.timeout = 60.0 # seconds
 
+    async def _call_api(self, file_bytes: bytes, filename: str, prompt: str) -> str:
+        """Helper to call the AI API with a specific prompt."""
+        async with httpx.AsyncClient(timeout=self.timeout, verify=False) as client:
+            files = {"audio_file": (filename, file_bytes, "audio/wav")}
+            data = {"prompt": prompt}
+            
+            logger.info(f"Sending request to AI API with prompt: {prompt[:50]}...")
+            response = await client.post(self.api_url, files=files, data=data)
+            
+            if response.status_code != 200:
+                logger.error(f"AI API Error: {response.status_code} - {response.text}")
+                raise Exception(f"AI API returned status {response.status_code}")
+
+            result = response.json()
+            return result.get("response", "")
+
     async def process_audio(self, file_bytes: bytes, filename: str = "audio.wav") -> Dict[str, Any]:
         """
         Process audio file using the external AI API.
-        Returns a dictionary with transcript, story, emotion, tags, and embedding.
+        Returns a dictionary with transcript, emotion.
         """
         
-        # 1. Construct the Prompt (based on PRD Section 5)
-        # Since the remote model likely handles audio-to-text implicitly or is multimodal,
-        # we ask it to perform the analysis directly.
-        prompt = """
-        请分析这段录音。
-        请输出 JSON 格式，包含以下字段：
-        1. `transcript`: 录音的逐字稿内容。
-        2. `emotion`: 用一个词概括情感氛围 (如: 孤独、热闹、治愈、紧张)。
-        3. `tags`: 3-5个关键标签 (如: 茶馆, 下雨声, 方言)，以列表形式。
-        4. `story`: 一段 50-100 字的短文。不要只是复述内容，要结合环境音进行想象，描绘出一幅画面，具有文学性和画面感。
-        """
+        # Prompt 1: Get Content (Transcript)
+        prompt_content = "请简要描述这段录音的内容"
+
+        # Prompt 2: Get Emotion
+        prompt_emotion = "请概括这段录音的情感氛围"
 
         try:
-            async with httpx.AsyncClient(timeout=self.timeout, verify=False) as client:
-                # Prepare multipart/form-data
-                files = {"audio_file": (filename, file_bytes, "audio/wav")} # Adjust mime type if needed
-                data = {"prompt": prompt}
+            # Execute both requests in parallel
+            content_task = self._call_api(file_bytes, filename, prompt_content)
+            emotion_task = self._call_api(file_bytes, filename, prompt_emotion)
+            
+            raw_content, raw_emotion = await asyncio.gather(content_task, emotion_task)
+            
+            # Clean up responses (remove potential whitespace/newlines)
+            transcript = raw_content.strip()
+            emotion = raw_emotion.strip()
 
-                logger.info(f"Sending request to AI API: {self.api_url}")
-                response = await client.post(self.api_url, files=files, data=data)
-                
-                if response.status_code != 200:
-                    logger.error(f"AI API Error: {response.status_code} - {response.text}")
-                    raise Exception(f"AI API returned status {response.status_code}")
-
-                result = response.json()
-                logger.info(f"AI API Response: {result}")
-
-                # Parse the response
-                # Assuming the API returns a JSON object where the main content is in a field like 'response' or directly in the body.
-                # Based on example.py: print("模型回复:", result.get("response"))
-                
-                raw_response_text = result.get("response", "")
-                
-                # Attempt to parse the JSON from the LLM's text response
-                # The LLM might wrap JSON in markdown code blocks ```json ... ```
-                parsed_data = self._extract_json(raw_response_text)
-                
-                # If parsing fails, fallback to raw text
-                if not parsed_data:
-                    parsed_data = {
-                        "transcript": raw_response_text, # Fallback
-                        "story": "无法生成故事",
-                        "emotion": "未知",
-                        "tags": []
-                    }
-
-                # Mock Embedding for now (since the API likely doesn't return it yet)
-                # In a real scenario, we would call an embedding API here.
-                # 768 dimensions is common for BERT-like models.
-                mock_embedding = [0.1] * 768 
-
-                return {
-                    "transcript": parsed_data.get("transcript", ""),
-                    "story": parsed_data.get("story", ""),
-                    "emotion": parsed_data.get("emotion", ""),
-                    "scene_tags": parsed_data.get("tags", []),
-                    "embedding": mock_embedding
-                }
+            return {
+                "transcript": transcript,
+                "emotion": emotion,
+            }
 
         except Exception as e:
             logger.error(f"Error processing audio: {e}")
-            # Return empty/error structure to avoid crashing the app
             return {
                 "transcript": "Error processing audio",
-                "story": "AI 服务暂时不可用",
                 "emotion": "Error",
-                "scene_tags": [],
-                "embedding": None
             }
 
     def _extract_json(self, text: str) -> Optional[Dict[str, Any]]:
@@ -117,3 +92,27 @@ class AIService:
         return None
 
 ai_service = AIService()
+async def main():
+    """
+    Main function to test the AI service.
+    """
+    audio_path = "backend/AI_infer/test.mp3"
+    
+    try:
+        with open(audio_path, "rb") as f:
+            file_bytes = f.read()
+            
+        print(f"Processing {audio_path}...")
+        result = await ai_service.process_audio(file_bytes, filename="test.mp3")
+        print("Analysis Result:")
+        print(json.dumps(result, indent=2, ensure_ascii=False))
+        
+    except FileNotFoundError:
+        print(f"Error: File not found at {audio_path}")
+    except Exception as e:
+        print(f"Error: {e}")
+
+if __name__ == "__main__":
+    # Configure logging to see output
+    logging.basicConfig(level=logging.INFO)
+    asyncio.run(main())
