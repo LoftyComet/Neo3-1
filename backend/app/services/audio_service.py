@@ -303,4 +303,27 @@ class AudioService:
             shutil.copyfileobj(file.file, buffer)
         try:
             audio_meta = mutagen.File(file_path)
-            duration = audio_meta.info.length if audio_meta and audio_meta.info
+            duration = audio_meta.info.length if audio_meta and audio_meta.info else 0
+            file_size = os.path.getsize(file_path)
+            file_format = file_ext.lstrip('.').lower()
+        except Exception as e:
+            print(f"Error extracting metadata: {e}")
+            duration = 0
+            file_size = 0
+            file_format = "unknown"
+        record_create = schemas.AudioRecordCreate(
+            latitude=latitude,
+            longitude=longitude,
+            duration=duration,
+            file_size=file_size,
+            format=file_format,
+            emotion_tag="Processing...",
+            scene_tags=[],
+            transcript="",
+            generated_story=""
+        )
+        db_record = crud.audio.create_audio_record(db, record_create, file_path, user_id=user_id)
+        background_tasks.add_task(self.process_audio_background, str(db_record.id), file_path)
+        return db_record
+
+audio_service = AudioService()
