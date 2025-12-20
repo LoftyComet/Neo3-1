@@ -8,6 +8,19 @@ from backend.app import models, schemas, crud
 from backend.app.core.database import SessionLocal, engine
 from backend.app.services import audio_service
 
+# 创建必要的数据库扩展
+#Deli added 
+from sqlalchemy import text
+try:
+    with engine.connect() as conn:
+        conn.execute(text("CREATE EXTENSION IF NOT EXISTS \"uuid-ossp\""))
+        conn.execute(text("CREATE EXTENSION IF NOT EXISTS \"vector\""))
+        conn.execute(text("CREATE EXTENSION IF NOT EXISTS \"postgis\""))
+        conn.commit()
+        print("Database extensions created successfully")
+except Exception as e:
+    print(f"Error creating extensions: {e}")
+
 # 在应用启动时创建表 (仅用于开发环境，生产环境推荐使用 Alembic)
 models.user.Base.metadata.create_all(bind=engine)
 
@@ -141,3 +154,48 @@ def unquestion_audio_record(record_id: str, db: Session = Depends(get_db)):
     if record is None:
         raise HTTPException(status_code=404, detail="Record not found")
     return record
+
+# --- Audio Endpoints ---
+
+@app.post("/audio/upload", response_model=schemas.AudioRecord)
+async def upload_audio(
+    latitude: float = Form(...),
+    longitude: float = Form(...),
+    file: UploadFile = File(...),
+    background_tasks: BackgroundTasks = BackgroundTasks(),
+    db: Session = Depends(get_db)
+    # user_id: str = Depends(get_current_user) # Uncomment when auth is ready
+):
+    return await audio_service.upload_and_process(db, file, latitude, longitude, background_tasks)
+
+@app.get("/audio/resonance", response_model=list[schemas.AudioRecord])
+def get_resonance_audio(city: str, current_hour: int, db: Session = Depends(get_db)):
+    """
+    策略一：时空共鸣
+    前端传入当前城市和当前小时数 (0-23)，返回此时此刻最应景的声音。
+    """
+    return audio_service.get_city_resonance_records(db, city=city, current_hour=current_hour)
+
+@app.get("/audio/culture", response_model=list[schemas.AudioRecord])
+def get_culture_audio(city: str, db: Session = Depends(get_db)):
+    """
+    策略二：文化声标
+    返回该城市最具文化代表性的声音（方言、叫卖、钟声等）。
+    """
+    return audio_service.get_cultural_recommendations(db, city=city)
+
+@app.get("/audio/roaming", response_model=list[schemas.AudioRecord])
+def get_roaming_audio(city: str, lat: float, lng: float, db: Session = Depends(get_db)):
+    """
+    策略三：乡愁漫游
+    前端传入目标城市和用户当前的经纬度。
+    后台自动判断是“本地探索”还是“异地乡愁”，并返回对应声音。
+    """
+    return audio_service.get_roaming_records(db, city=city, user_lat=lat, user_lon=lng)
+
+@app.get("/audio/{record_id}", response_model=schemas.AudioRecord)
+def read_audio(record_id: str, db: Session = Depends(get_db)):
+    db_audio = crud.audio.get_record(db, record_id=record_id)
+    if db_audio is None:
+        raise HTTPException(status_code=404, detail="Audio not found")
+    return db_audio

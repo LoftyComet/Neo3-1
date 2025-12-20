@@ -1,15 +1,12 @@
 from sqlalchemy.orm import Session
 from backend.app.models.audio import AudioRecord
 from backend.app.schemas.audio import AudioRecordCreate
-from geoalchemy2.shape import from_shape
-from shapely.geometry import Point
-
-from typing import Optional
+from typing import Optional, List
 from uuid import UUID
 
+# --- 基础 CRUD 操作 ---
+
 def create_audio_record(db: Session, record: AudioRecordCreate, file_path: str, user_id: Optional[UUID] = None):
-    # 创建 PostGIS 点
-    # 使用 WKT (Well-Known Text) 格式插入
     point_wkt = f'POINT({record.longitude} {record.latitude})'
     
     db_record = AudioRecord(
@@ -17,7 +14,7 @@ def create_audio_record(db: Session, record: AudioRecordCreate, file_path: str, 
         file_path=file_path,
         latitude=record.latitude,
         longitude=record.longitude,
-        location_geo=point_wkt, # GeoAlchemy2 会自动处理 WKT 字符串
+        location_geo=point_wkt,
         duration=record.duration,
         file_size=record.file_size,
         format=record.format,
@@ -49,7 +46,8 @@ def update_audio_record(db: Session, record_id: str, update_data: dict):
         return None
     
     for key, value in update_data.items():
-        setattr(db_record, key, value)
+        if hasattr(db_record, key):
+            setattr(db_record, key, value)
         
     db.commit()
     db.refresh(db_record)
@@ -85,12 +83,4 @@ def decrement_question(db: Session, record_id: str):
         db_record.question_count -= 1
         db.commit()
         db.refresh(db_record)
-    return db_record
-    for key, value in update_data.items():
-        if hasattr(db_record, key):
-            setattr(db_record, key, value)
-    
-    db.add(db_record)
-    db.commit()
-    db.refresh(db_record)
     return db_record

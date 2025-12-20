@@ -12,6 +12,8 @@ export interface AudioRecord {
   format?: string;
   likeCount?: number;
   questionCount?: number;
+  city?: string;
+  district?: string;
 }
 
 export interface MapViewState {

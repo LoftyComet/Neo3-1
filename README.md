@@ -15,15 +15,45 @@ npm install
 `$env:Path += ";C:\Program Files\Docker\Docker\resources\bin"`
 
 #### 运行 pgvector 官方镜像
+`docker run -d --name echomap-db -e POSTGRES_USER=postgres -e POSTGRES_PASSWORD=postgres -e POSTGRES_DB=echomap -p 5432:5432 postgis/postgis:16-3.4`
+
+#### 进入容器
+`docker exec -it echomap-db psql -U postgres -d echomap`
+
+-- 开启 PostGIS (镜像通常已开启，但确认一下)
+`CREATE EXTENSION IF NOT EXISTS postgis;`
+-- 开启 Vector (如果镜像里没有，这一步会报错)
+`CREATE EXTENSION IF NOT EXISTS vector;`
+
+> 简单的解决方案
+1. 删除旧容器（如果有）
+`docker rm -f echomap-db`
+
+2. 运行 pgvector 官方镜像
 `docker run -d --name echomap-db -e POSTGRES_USER=postgres -e POSTGRES_PASSWORD=postgres -e POSTGRES_DB=echomap -p 5432:5432 pgvector/pgvector:pg16`
 
-#### 进入容器安装 PostGIS (这一步需要容器内有网络)
+3. 进入容器安装 PostGIS (这一步需要容器内有网络)
 `docker exec -u 0 -it echomap-db bash -c "apt-get update && apt-get install -y postgis postgresql-16-postgis-3"`
 
-#### 登录数据库开启扩展
+4. 登录数据库开启扩展
 `docker exec -it echomap-db psql -U postgres -d echomap -c "CREATE EXTENSION IF NOT EXISTS postgis;"
 docker exec -it echomap-db psql -U postgres -d echomap -c "CREATE EXTENSION IF NOT EXISTS vector;"`
 
+
+## 数据初始化 (重要)
+
+为了启用**语义搜索**和**时空共鸣**功能，需要初始化数据库并生成向量数据。
+
+### 1. 导入基础数据
+使用数据库管理工具（如 DBeaver, pgAdmin）或命令行，运行 `SQL.txt` 中的 SQL 语句。这将插入 100 条分布在全国各地的合成音频数据。
+
+### 2. 生成 Embedding 向量
+由于合成数据默认没有向量信息（无法被搜索到），需要运行初始化脚本来调用 AI 模型生成向量。
+
+1. 确保后端环境已配置好 `EMBEDDING_API_KEY` (在 `backend/app/services/audio_service.py` 或环境变量中)。
+2. 在项目根目录下运行：
+   ```bash
+   python -m backend.init_embeddings
 ## 运行项目
 
 ### 启动后端
@@ -32,10 +62,3 @@ docker exec -it echomap-db psql -U postgres -d echomap -c "CREATE EXTENSION IF N
 ### 启动前端
 `cd frontend
 npm run dev`
-
-## AutoDL 部署
-### 在AutoDL服务器上，启动终端
-pip install -r autodl_requirements.txt
-python download.py
-### 根据实际情况修改server.py中的模型路径配置
-python server.py

@@ -21,77 +21,135 @@ interface LeafletMapProps {
   audioRecords: AudioRecord[];
   onMarkerClick?: (record: AudioRecord) => void;
   userLocation?: { lat: number; lng: number } | null;
+  selectedAudio?: AudioRecord | null;
+  visitedAudioIds?: Set<string>;
+  isLocating?: boolean;
+  onLocationReached?: () => void;
 }
 
 // Component to handle map view updates and animations
 function MapController({ 
-  userLocation, 
-  hasAnimated, 
-  setHasAnimated 
+  selectedAudio,
+  userLocation,
+  isLocating,
+  onLocationReached
 }: { 
-  userLocation: { lat: number; lng: number } | null,
-  hasAnimated: boolean,
-  setHasAnimated: (v: boolean) => void
+  selectedAudio?: AudioRecord | null,
+  userLocation?: { lat: number; lng: number } | null,
+  isLocating?: boolean,
+  onLocationReached?: () => void
 }) {
   const map = useMap();
   
+  // Fly to user location when requested
   useEffect(() => {
-    if (userLocation && !hasAnimated) {
-      // 1. Start at user location, zoomed in
-      map.setView([userLocation.lat, userLocation.lng], 16, { animate: false });
+    if (isLocating && userLocation) {
+      map.flyTo([userLocation.lat, userLocation.lng], 14, {
+        duration: 2.5,
+        easeLinearity: 0.25
+      });
       
-      // 2. Wait a bit, then zoom out to show context (Cinematic Pull-back)
       const timer = setTimeout(() => {
-        map.flyTo([userLocation.lat, userLocation.lng], 13, {
-          duration: 3, // Slow, cinematic duration
-          easeLinearity: 0.25
-        });
-        setHasAnimated(true);
-      }, 1500);
-
+        onLocationReached?.();
+      }, 2500);
+      
       return () => clearTimeout(timer);
     }
-  }, [userLocation, hasAnimated, map, setHasAnimated]);
+  }, [isLocating, userLocation, map, onLocationReached]);
+
+  // Center on selected audio
+  useEffect(() => {
+    if (selectedAudio) {
+      map.flyTo([selectedAudio.latitude, selectedAudio.longitude], 15, {
+        duration: 1.5,
+        easeLinearity: 0.25
+      });
+    }
+  }, [selectedAudio, map]);
 
   return null;
 }
 
 // Custom Marker Component (for rendering to HTML string)
-const CustomMarker = ({ color, emotion }: { color: string; emotion: string }) => (
-  <div className="relative w-[60px] h-[60px] flex items-center justify-center group">
-    {/* Outer Glow Ring */}
+const CustomMarker = ({ 
+  color, 
+  emotion, 
+  isSelected, 
+  isVisited 
+}: { 
+  color: string; 
+  emotion: string; 
+  isSelected?: boolean;
+  isVisited?: boolean;
+}) => (
+  <div className={`relative w-[80px] h-[80px] flex items-center justify-center transition-all duration-1000 ${
+    isSelected ? 'scale-125' : 'scale-100'
+  } ${!isVisited && !isSelected ? 'grayscale-[0.4] opacity-30' : 'grayscale-0 opacity-100'}`}>
+    
+    {/* Outer Halo - Morandi Soft Glow */}
     <div
-      className="absolute inset-0 rounded-full animate-[pulse-glow_3s_infinite]"
+      className={`absolute inset-0 rounded-full transition-all duration-1000 ${
+        isSelected ? 'opacity-80 scale-110' : isVisited ? 'opacity-40 scale-90' : 'opacity-10 scale-75'
+      } ${isVisited ? 'animate-pulse-brisk' : 'animate-pulse-soothing'}`}
       style={{
-        border: `1px solid ${color}`,
-        opacity: 0.4,
+        background: `radial-gradient(circle, ${color}22 0%, transparent 75%)`,
+        border: isSelected ? `1.5px solid ${color}44` : `1px solid ${color}11`,
+        boxShadow: isSelected ? `0 0 40px ${color}22` : 'none',
+        backdropFilter: isSelected ? 'blur(8px)' : 'none',
       }}
     />
     
-    {/* Inner Glow */}
+    {/* Inner Soft Glow Core */}
     <div
-      className="absolute inset-0 rounded-full blur-md transition-all duration-500 group-hover:scale-150 group-hover:opacity-80"
+      className="absolute w-8 h-8 rounded-full blur-xl transition-all duration-1000"
       style={{
         backgroundColor: color,
-        opacity: 0.6,
-        transform: 'scale(0.5)'
+        opacity: isSelected ? 0.6 : isVisited ? 0.3 : 0.1,
+        transform: isSelected ? 'scale(1.2)' : 'scale(1)'
       }}
     />
 
-    {/* Core Particle */}
+    {/* Center Point - The "Matte Pearl" */}
     <div
-      className="relative w-3 h-3 rounded-full bg-white shadow-[0_0_10px_rgba(255,255,255,0.8)] transition-transform duration-300 group-hover:scale-125"
-    />
+      className={`relative w-3.5 h-3.5 rounded-full transition-all duration-700 ${
+        isSelected ? 'scale-125' : 'scale-100'
+      }`}
+      style={{
+        backgroundColor: isVisited || isSelected ? color : '#D1D5DB',
+        boxShadow: isSelected 
+          ? `0 0 20px ${color}66, inset 0 0 4px rgba(255,255,255,0.5)` 
+          : `inset 0 0 2px rgba(255,255,255,0.3)`,
+        border: '1px solid rgba(255,255,255,0.2)'
+      }}
+    >
+      {/* Subtle highlight for a matte ceramic look */}
+      <div className="absolute top-0.5 left-0.5 w-1 h-1 rounded-full bg-white/30 blur-[0.5px]" />
+    </div>
+
+    {/* Selection Indicator Ring - Minimalist */}
+    {isSelected && (
+      <div className="absolute -inset-2 rounded-full border border-white/10 animate-[spin_12s_linear_infinite]" 
+           style={{ borderStyle: 'solid', borderTopColor: 'rgba(255,255,255,0.3)' }} />
+    )}
   </div>
 );
 
-export default function LeafletMap({ audioRecords, onMarkerClick, userLocation }: LeafletMapProps) {
-  const [hasAnimated, setHasAnimated] = useState(false);
-  
+export default function LeafletMap({ 
+  audioRecords, 
+  onMarkerClick, 
+  userLocation, 
+  selectedAudio, 
+  visitedAudioIds,
+  isLocating,
+  onLocationReached
+}: LeafletMapProps) {
   const defaultCenter: [number, number] = [
     MAP_CONFIG.DEFAULT_VIEW_STATE.latitude,
     MAP_CONFIG.DEFAULT_VIEW_STATE.longitude
   ];
+
+  // Always start at default center to avoid jump
+  const initialCenter: [number, number] = defaultCenter;
 
   // Calculate connections (simple mesh for demo)
   const connections = audioRecords.slice(0, 10).map((record, i) => {
@@ -117,16 +175,17 @@ export default function LeafletMap({ audioRecords, onMarkerClick, userLocation }
 
   return (
     <MapContainer
-      center={defaultCenter}
+      center={initialCenter}
       zoom={MAP_CONFIG.DEFAULT_VIEW_STATE.zoom}
       className="w-full h-full z-10"
       style={{ background: 'transparent' }}
       zoomControl={false}
     >
       <MapController 
-        userLocation={userLocation} 
-        hasAnimated={hasAnimated} 
-        setHasAnimated={setHasAnimated} 
+        selectedAudio={selectedAudio}
+        userLocation={userLocation}
+        isLocating={isLocating}
+        onLocationReached={onLocationReached}
       />
       
       {/* Dark Mode Tiles */}
@@ -141,19 +200,26 @@ export default function LeafletMap({ audioRecords, onMarkerClick, userLocation }
 
       {/* Markers */}
       {audioRecords.map((record) => {
+        const isSelected = selectedAudio?.id === record.id;
+        const isVisited = visitedAudioIds?.has(record.id);
         const emotionColor = MAP_CONFIG.MARKER_CONFIG.emotionColors[
           record.emotion as keyof typeof MAP_CONFIG.MARKER_CONFIG.emotionColors
         ] || '#00f3ff';
 
         const iconHtml = renderToStaticMarkup(
-          <CustomMarker color={emotionColor} emotion={record.emotion} />
+          <CustomMarker 
+            color={emotionColor} 
+            emotion={record.emotion} 
+            isSelected={isSelected} 
+            isVisited={isVisited}
+          />
         );
 
         const customIcon = L.divIcon({
-          className: 'custom-leaflet-marker',
+          className: `custom-leaflet-marker ${isSelected ? 'z-[1000]' : ''}`,
           html: iconHtml,
-          iconSize: [60, 60],
-          iconAnchor: [30, 30],
+          iconSize: [80, 80],
+          iconAnchor: [40, 40],
         });
 
         return (
@@ -161,6 +227,7 @@ export default function LeafletMap({ audioRecords, onMarkerClick, userLocation }
             key={record.id}
             position={[record.latitude, record.longitude]}
             icon={customIcon}
+            zIndexOffset={isSelected ? 1000 : 0}
             eventHandlers={{
               click: () => onMarkerClick && onMarkerClick(record),
             }}

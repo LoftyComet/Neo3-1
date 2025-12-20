@@ -18,12 +18,20 @@ interface MapComponentProps {
   audioRecords?: AudioRecord[];
   onMarkerClick?: (record: AudioRecord) => void;
   userLocation?: { lat: number; lng: number } | null;
+  selectedAudio?: AudioRecord | null;
+  visitedAudioIds?: Set<string>;
+  isLocating?: boolean;
+  onLocationReached?: () => void;
 }
 
 export default function MapComponent({
   audioRecords = [],
   onMarkerClick,
-  userLocation
+  userLocation,
+  selectedAudio,
+  visitedAudioIds,
+  isLocating,
+  onLocationReached
 }: MapComponentProps) {
   return (
     <div className="w-full h-screen relative overflow-hidden bg-black">
@@ -39,6 +47,10 @@ export default function MapComponent({
           audioRecords={audioRecords}
           onMarkerClick={onMarkerClick}
           userLocation={userLocation}
+          selectedAudio={selectedAudio}
+          visitedAudioIds={visitedAudioIds}
+          isLocating={isLocating}
+          onLocationReached={onLocationReached}
         />
       </div>
 
