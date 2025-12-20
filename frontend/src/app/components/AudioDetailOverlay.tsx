@@ -180,128 +180,116 @@ export const AudioDetailOverlay: React.FC<DetailProps> = ({ record, onClose, onN
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 50, scale: 0.95 }}
-      animate={{ opacity: 1, y: 0, scale: 1 }}
-      exit={{ opacity: 0, y: 20 }}
-      transition={{ type: "spring", stiffness: 200, damping: 25 }}
-      className="absolute top-20 right-5 w-80 md:w-96 z-40"
+      initial={{ opacity: 0, x: 20, scale: 0.95 }}
+      animate={{ opacity: 1, x: 0, scale: 1 }}
+      exit={{ opacity: 0, x: 20, scale: 0.95 }}
+      transition={{ type: "spring", stiffness: 260, damping: 20 }}
+      className="absolute top-24 right-6 w-80 md:w-96 z-40"
     >
-      {/* iOS Style Blur Card */}
-      <div className="glass-panel rounded-3xl p-6 shadow-[0_0_40px_rgba(0,0,0,0.5)] text-white overflow-hidden relative border border-white/10">
+      {/* Apple Style Glassmorphism Card */}
+      <div className="relative rounded-[2.5rem] p-8 shadow-[0_20px_50px_rgba(0,0,0,0.5)] text-white overflow-hidden border border-white/20 bg-black/40 backdrop-blur-2xl">
         
+        {/* Background Gradient Glow */}
+        <div className="absolute -top-24 -right-24 w-48 h-48 bg-indigo-500/20 blur-[80px] rounded-full pointer-events-none" />
+        <div className="absolute -bottom-24 -left-24 w-48 h-48 bg-blue-500/10 blur-[80px] rounded-full pointer-events-none" />
+
         {/* Close Button */}
-        <button onClick={onClose} className="absolute top-4 right-4 p-2 bg-white/10 rounded-full hover:bg-white/20 transition">
-          <X size={16} />
+        <button 
+          onClick={onClose} 
+          className="absolute top-6 right-6 p-2 bg-white/5 hover:bg-white/10 rounded-full transition-all duration-300 border border-white/10 active:scale-90"
+        >
+          <X size={18} className="text-white/70" />
         </button>
 
         {/* Header: Emotion Tag */}
-        <div className="flex items-center space-x-2 mb-4">
-          <span className="px-3 py-1 text-xs font-bold uppercase tracking-wider bg-indigo-500/80 rounded-full shadow-[0_0_15px_rgba(99,102,241,0.5)]">
+        <div className="flex items-center space-x-3 mb-6">
+          <div className="px-4 py-1.5 text-[10px] font-bold uppercase tracking-[0.2em] bg-white/10 rounded-full border border-white/10 backdrop-blur-md text-white/90">
             {record.emotion}
-          </span>
-          <span className="text-xs text-gray-400">
-            {new Date(record.createdAt).toLocaleDateString()}
+          </div>
+          <div className="h-1 w-1 rounded-full bg-white/20" />
+          <span className="text-[10px] text-white/40 font-medium tracking-wider">
+            {new Date(record.createdAt).toLocaleDateString('zh-CN', { month: 'long', day: 'numeric' })}
           </span>
         </div>
 
         {/* Story Content */}
-        <h2 className="text-xl font-semibold mb-2 leading-tight">声音的故事</h2>
-        <p className="text-sm text-gray-300 leading-relaxed font-light mb-6">
+        <h2 className="text-2xl font-bold mb-3 tracking-tight bg-gradient-to-br from-white to-white/60 bg-clip-text text-transparent">
+          声音的故事
+        </h2>
+        <p className="text-sm text-white/70 leading-relaxed font-light mb-8 line-clamp-4 hover:line-clamp-none transition-all duration-500">
           {record.story}
         </p>
 
-        {/* Metadata Info */}
-        {(record.fileSize || record.format) && (
-          <div className="flex gap-4 mb-4 text-xs text-gray-500">
-             {record.format && <span>Format: {record.format.toUpperCase()}</span>}
-             {record.fileSize && <span>Size: {(record.fileSize / 1024 / 1024).toFixed(2)} MB</span>}
-          </div>
-        )}
-
-        {/* Audio Player */}
-        <div className="bg-white/5 rounded-xl mb-6 p-4 border border-white/5">
+        {/* Audio Player Section */}
+        <div className="bg-white/5 rounded-[2rem] mb-8 p-6 border border-white/10 shadow-inner">
           {/* Play Controls */}
-          <div className="flex items-center justify-center space-x-6 mb-4">
+          <div className="flex items-center justify-between mb-6 px-2">
             {/* Prev Button */}
             <button 
               onClick={onPrev}
-              className="p-2 text-gray-400 hover:text-white transition hover:scale-110"
+              className="p-3 text-white/40 hover:text-white hover:bg-white/5 rounded-full transition-all duration-300 active:scale-75"
               disabled={!onPrev}
             >
-              <ChevronLeft size={24} />
+              <ChevronLeft size={28} />
             </button>
 
             {/* Play/Pause */}
             <button
               onClick={handlePlayPause}
-              className="w-14 h-14 bg-white rounded-full flex items-center justify-center shadow-lg hover:scale-105 transition-transform active:scale-95"
+              className="w-16 h-16 bg-white text-black rounded-full flex items-center justify-center shadow-[0_10px_25px_rgba(255,255,255,0.2)] hover:scale-105 transition-all duration-300 active:scale-90 group"
             >
               {isPlaying ? (
-                <Pause size={20} className="text-black" />
+                <Pause size={24} fill="currentColor" />
               ) : (
-                <Play size={20} className="text-black ml-1" />
+                <Play size={24} className="ml-1" fill="currentColor" />
               )}
             </button>
 
             {/* Next Button */}
             <button 
               onClick={onNext}
-              className="p-2 text-gray-400 hover:text-white transition hover:scale-110"
+              className="p-3 text-white/40 hover:text-white hover:bg-white/5 rounded-full transition-all duration-300 active:scale-75"
               disabled={!onNext}
             >
-              <ChevronRight size={24} />
+              <ChevronRight size={28} />
             </button>
           </div>
 
           {/* Progress Bar */}
-          <div className="space-y-2">
-            <div className="relative h-1 bg-white/20 rounded-full overflow-hidden">
-              <div
-                className="absolute left-0 top-0 h-full bg-white rounded-full transition-all duration-100"
-                style={{ width: `${progress}%` }}
+          <div className="space-y-3 px-2">
+            <div className="relative h-1.5 bg-white/10 rounded-full overflow-hidden">
+              <motion.div
+                className="absolute left-0 top-0 h-full bg-white rounded-full"
+                initial={{ width: 0 }}
+                animate={{ width: `${progress}%` }}
+                transition={{ type: "tween", ease: "linear" }}
               />
             </div>
-            <div className="flex justify-between text-xs text-gray-400">
+            <div className="flex justify-between text-[10px] font-medium tracking-tighter text-white/30">
               <span>{formatTime(playbackTime)}</span>
               <span>{formatTime(duration)}</span>
             </div>
           </div>
-
-          {/* Waveform Visualization */}
-          <div className="flex items-center justify-center space-x-1 mt-3 h-8">
-            {[...Array(15)].map((_, i) => {
-              const isActive = isPlaying && Math.random() > 0.3;
-              const height = isActive ? Math.random() * 100 + 50 : 20;
-              return (
-                <div
-                  key={i}
-                  className="w-1 bg-white/40 rounded-full transition-all duration-150"
-                  style={{
-                    height: `${height}%`,
-                    opacity: isActive ? 0.8 : 0.4
-                  }}
-                />
-              );
-            })}
-          </div>
         </div>
 
         {/* Footer Actions */}
-        <div className="flex justify-between items-center border-t border-white/10 pt-4">
-           <div className="flex space-x-2">
-             {record.tags.map(tag => (
-               <span key={tag} className="text-xs text-cyan-300">#{tag}</span>
+        <div className="flex justify-between items-center pt-2">
+           <div className="flex flex-wrap gap-2 max-w-[60%]">
+             {record.tags.slice(0, 2).map(tag => (
+               <span key={tag} className="text-[10px] font-medium text-[#A7BBC7] px-2 py-0.5 bg-white/5 rounded-md border border-white/10">
+                 #{tag}
+               </span>
              ))}
            </div>
-           <div className="flex space-x-6">
-             <button onClick={handleLike} className="flex items-center space-x-1 group">
-               <Heart size={20} className={`transition ${isLiked ? 'fill-red-500 text-red-500' : 'text-gray-400 group-hover:text-red-500'}`} />
-               <span className="text-xs text-gray-400 group-hover:text-white">{likeCount}</span>
+           <div className="flex items-center space-x-5">
+             <button onClick={handleLike} className="flex flex-col items-center gap-1 group">
+               <Heart size={22} className={`transition-all duration-300 ${isLiked ? 'fill-[#B48484] text-[#B48484] scale-110' : 'text-white/30 group-hover:text-[#B48484]'}`} />
+               <span className="text-[9px] font-bold text-white/30 group-hover:text-white/60">{likeCount}</span>
              </button>
              
-             <button onClick={handleQuestion} className="flex items-center space-x-1 group">
-               <HelpCircle size={20} className={`transition ${isQuestioned ? 'text-yellow-500' : 'text-gray-400 group-hover:text-yellow-500'}`} />
-               <span className="text-xs text-gray-400 group-hover:text-white">{questionCount}</span>
+             <button onClick={handleQuestion} className="flex flex-col items-center gap-1 group">
+               <HelpCircle size={22} className={`transition-all duration-300 ${isQuestioned ? 'text-[#D4A373] scale-110' : 'text-white/30 group-hover:text-[#D4A373]'}`} />
+               <span className="text-[9px] font-bold text-white/30 group-hover:text-white/60">{questionCount}</span>
              </button>
            </div>
         </div>

@@ -24,14 +24,14 @@ export const MAP_CONFIG = {
 
   // Marker configurations
   MARKER_CONFIG: {
-    // Emotion colors for different audio types
+    // Emotion colors for different audio types (Morandi Palette)
     emotionColors: {
-      'Joy': '#FFD700',
-      'Loneliness': '#4A90E2',
-      'Nostalgia': '#9B59B6',
-      'Love': '#E74C3C',
-      'Peace': '#2ECC71',
-      'Excitement': '#FF6B6B'
+      'Joy': '#D4A373',        // Muted Sand
+      'Loneliness': '#8E9775',  // Olive Grey
+      'Nostalgia': '#92817A',   // Warm Taupe
+      'Love': '#B48484',        // Dusty Rose
+      'Peace': '#A7BBC7',       // Muted Blue-Grey
+      'Excitement': '#C38D9E'   // Muted Mauve
     },
     // Marker size configurations
     size: {

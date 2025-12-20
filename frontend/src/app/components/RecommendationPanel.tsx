@@ -7,9 +7,16 @@ interface RecommendationPanelProps {
   userLat: number;
   userLng: number;
   onPlayAudio: (audio: AudioRecord) => void;
+  selectedAudio?: AudioRecord | null;
 }
 
-const RecommendationPanel: React.FC<RecommendationPanelProps> = ({ currentCity, userLat, userLng, onPlayAudio }) => {
+const RecommendationPanel: React.FC<RecommendationPanelProps> = ({ 
+  currentCity, 
+  userLat, 
+  userLng, 
+  onPlayAudio,
+  selectedAudio 
+}) => {
   const [activeTab, setActiveTab] = useState<'resonance' | 'culture' | 'roaming'>('resonance');
   const [records, setRecords] = useState<AudioRecord[]>([]);
   const [loading, setLoading] = useState(false);
@@ -30,6 +37,10 @@ const RecommendationPanel: React.FC<RecommendationPanelProps> = ({ currentCity, 
           data = await api.getRoamingAudio(currentCity, userLat, userLng);
         }
         setRecords(data);
+        // Auto-select first record when tab changes to trigger map animation
+        if (data.length > 0) {
+          onPlayAudio(data[0]);
+        }
       } catch (error) {
         console.error("Failed to fetch recommendations", error);
       } finally {
@@ -41,45 +52,74 @@ const RecommendationPanel: React.FC<RecommendationPanelProps> = ({ currentCity, 
   }, [activeTab, currentCity, userLat, userLng]);
 
   return (
-    <div className="bg-white/90 backdrop-blur-md p-4 rounded-lg shadow-lg max-h-[400px] overflow-y-auto pointer-events-auto">
-      <div className="flex space-x-4 mb-4 border-b pb-2">
-        <button 
-          onClick={() => setActiveTab('resonance')}
-          className={`pb-1 ${activeTab === 'resonance' ? 'border-b-2 border-blue-500 font-bold' : 'text-gray-500'}`}
-        >
-          时空共鸣
-        </button>
-        <button 
-          onClick={() => setActiveTab('culture')}
-          className={`pb-1 ${activeTab === 'culture' ? 'border-b-2 border-blue-500 font-bold' : 'text-gray-500'}`}
-        >
-          文化声标
-        </button>
-        <button 
-          onClick={() => setActiveTab('roaming')}
-          className={`pb-1 ${activeTab === 'roaming' ? 'border-b-2 border-blue-500 font-bold' : 'text-gray-500'}`}
-        >
-          乡愁漫游
-        </button>
+    <div className="bg-black/40 backdrop-blur-xl p-4 rounded-2xl shadow-2xl max-h-[500px] overflow-hidden flex flex-col border border-white/10 pointer-events-auto">
+      <div className="flex p-1 bg-white/5 rounded-xl mb-4 border border-white/5">
+        {(['resonance', 'culture', 'roaming'] as const).map((tab) => (
+          <button 
+            key={tab}
+            onClick={() => setActiveTab(tab)}
+            className={`flex-1 py-2 text-xs font-medium rounded-lg transition-all duration-300 ${
+              activeTab === tab 
+                ? 'bg-white/10 text-white shadow-lg' 
+                : 'text-white/40 hover:text-white/60'
+            }`}
+          >
+            {tab === 'resonance' ? '时空共鸣' : tab === 'culture' ? '文化声标' : '乡愁漫游'}
+          </button>
+        ))}
       </div>
 
       {loading ? (
-        <div className="text-center py-4">加载中...</div>
+        <div className="flex flex-col items-center justify-center py-12 space-y-3">
+          <div className="w-5 h-5 border-2 border-white/20 border-t-white/80 rounded-full animate-spin" />
+          <div className="text-white/40 text-xs tracking-widest">探索中</div>
+        </div>
       ) : (
-        <div className="space-y-3">
+        <div className="space-y-2 overflow-y-auto pr-1 custom-scrollbar">
           {records.length === 0 ? (
-            <div className="text-gray-500 text-center">暂无推荐内容</div>
+            <div className="text-white/30 text-center py-8 text-sm italic">暂无推荐内容</div>
           ) : (
-            records.map(record => (
-              <div key={record.id} className="p-3 bg-gray-50 rounded hover:bg-gray-100 cursor-pointer transition" onClick={() => onPlayAudio(record)}>
-                <div className="font-medium text-gray-800 truncate">{record.story.substring(0, 30)}...</div>
-                <div className="text-xs text-gray-500 mt-1 flex justify-between">
-                  <span>{record.tags.slice(0, 3).join(', ')}</span>
-                  <span>❤️ {record.likeCount}</span>
+            records.map(record => {
+              const isSelected = selectedAudio?.id === record.id;
+              return (
+                <div 
+                  key={record.id} 
+                  className={`group p-4 rounded-xl cursor-pointer transition-all duration-500 border ${
+                    isSelected 
+                      ? 'bg-white/15 border-white/20 shadow-[0_0_20px_rgba(255,255,255,0.05)]' 
+                      : 'bg-white/5 border-transparent hover:bg-white/10 hover:border-white/10'
+                  }`} 
+                  onClick={() => onPlayAudio(record)}
+                >
+                  <div className="flex items-start justify-between gap-3">
+                    <div className={`font-medium text-sm transition-colors duration-300 ${isSelected ? 'text-white' : 'text-white/80 group-hover:text-white'}`}>
+                      {record.story.substring(0, 40)}...
+                    </div>
+                    {isSelected && (
+                      <div className="w-2 h-2 rounded-full bg-[#A7BBC7] animate-pulse shadow-[0_0_8px_rgba(167,187,199,0.8)]" />
+                    )}
+                  </div>
+                  
+                  <div className="text-[10px] text-white/40 mt-2 flex justify-between items-center">
+                    <div className="flex gap-2">
+                      {record.tags.slice(0, 2).map(tag => (
+                        <span key={tag} className="px-1.5 py-0.5 bg-white/5 rounded-md border border-white/5">#{tag}</span>
+                      ))}
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <span className="flex items-center gap-1">
+                        <span className="opacity-60">❤️</span> {record.likeCount}
+                      </span>
+                      {record.city && (
+                        <span className="text-[#A7BBC7]/80 flex items-center gap-0.5">
+                          <span className="text-[8px]">📍</span> {record.district || record.city}
+                        </span>
+                      )}
+                    </div>
+                  </div>
                 </div>
-                {record.city && <div className="text-xs text-blue-500 mt-1">📍 {record.city} {record.district}</div>}
-              </div>
-            ))
+              );
+            })
           )}
         </div>
       )}
