@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import MapComponent from "@/app/components/MapComponent";
 import { RecordButton } from "@/app/components/RecordButton";
 import { AudioDetailOverlay } from "@/app/components/AudioDetailOverlay";
+import RecommendationPanel from "@/app/components/RecommendationPanel";
 import { AudioRecord } from "@/types";
 import { api } from "@/services/api";
 
@@ -13,6 +14,8 @@ export default function Home() {
   const [selectedAudio, setSelectedAudio] = useState<AudioRecord | null>(null);
   const [audioRecords, setAudioRecords] = useState<AudioRecord[]>([]);
   const [userId, setUserId] = useState<string | undefined>(undefined);
+  const [currentCity, setCurrentCity] = useState<string>("上海市");
+
 
   // Initialize User
   useEffect(() => {
@@ -117,6 +120,27 @@ export default function Home() {
           <h1 className="absolute top-6 left-6 text-2xl font-bold tracking-tighter mix-blend-difference">
             ECHOES
           </h1>
+
+          {/* 城市搜索与推荐面板 */}
+          <div className="absolute top-20 left-6 w-80 pointer-events-auto space-y-4">
+            <div className="bg-white/90 backdrop-blur-md p-2 rounded-lg shadow-lg flex">
+              <input 
+                type="text" 
+                value={currentCity}
+                onChange={(e) => setCurrentCity(e.target.value)}
+                className="bg-transparent text-black outline-none flex-1 px-2"
+                placeholder="输入城市漫游..."
+              />
+              <span className="text-gray-500">🔍</span>
+            </div>
+            
+            <RecommendationPanel 
+              currentCity={currentCity}
+              userLat={userLocation?.lat || 31.2304}
+              userLng={userLocation?.lng || 121.4737}
+              onPlayAudio={handleMarkerClick}
+            />
+          </div>
        </div>
 
        {/* 录音按钮 (允许点击) */}

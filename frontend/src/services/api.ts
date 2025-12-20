@@ -17,6 +17,8 @@ const mapRecord = (record: any): AudioRecord => {
     createdAt: record.created_at,
     likeCount: record.like_count || 0,
     questionCount: record.question_count || 0,
+    city: record.city,
+    district: record.district,
   };
 };
 
@@ -100,5 +102,27 @@ export const api = {
     if (!response.ok) throw new Error("Failed to unquestion record");
     const data = await response.json();
     return mapRecord(data);
+  },
+
+  // New Strategy APIs
+  getResonanceAudio: async (city: string, currentHour: number): Promise<AudioRecord[]> => {
+    const response = await fetch(`${API_BASE_URL}/audio/resonance?city=${encodeURIComponent(city)}&current_hour=${currentHour}`);
+    if (!response.ok) throw new Error("Failed to fetch resonance audio");
+    const data = await response.json();
+    return data.map(mapRecord);
+  },
+
+  getCultureAudio: async (city: string): Promise<AudioRecord[]> => {
+    const response = await fetch(`${API_BASE_URL}/audio/culture?city=${encodeURIComponent(city)}`);
+    if (!response.ok) throw new Error("Failed to fetch culture audio");
+    const data = await response.json();
+    return data.map(mapRecord);
+  },
+
+  getRoamingAudio: async (city: string, lat: number, lng: number): Promise<AudioRecord[]> => {
+    const response = await fetch(`${API_BASE_URL}/audio/roaming?city=${encodeURIComponent(city)}&lat=${lat}&lng=${lng}`);
+    if (!response.ok) throw new Error("Failed to fetch roaming audio");
+    const data = await response.json();
+    return data.map(mapRecord);
   }
 };
