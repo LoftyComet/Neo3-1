@@ -17,6 +17,17 @@ try:
         conn.execute(text("CREATE EXTENSION IF NOT EXISTS \"uuid-ossp\""))
         conn.execute(text("CREATE EXTENSION IF NOT EXISTS \"vector\""))
         conn.execute(text("CREATE EXTENSION IF NOT EXISTS \"postgis\""))
+        
+        # 临时迁移：添加 city 和 district 字段
+        try:
+            conn.execute(text("ALTER TABLE audio_records ADD COLUMN IF NOT EXISTS city VARCHAR"))
+            conn.execute(text("ALTER TABLE audio_records ADD COLUMN IF NOT EXISTS district VARCHAR"))
+            conn.execute(text("CREATE INDEX IF NOT EXISTS ix_audio_records_city ON audio_records (city)"))
+            conn.execute(text("CREATE INDEX IF NOT EXISTS ix_audio_records_district ON audio_records (district)"))
+            print("Migration: Added city and district columns")
+        except Exception as e:
+            print(f"Migration warning (might already exist): {e}")
+            
         conn.commit()
         print("Database extensions created successfully")
 except Exception as e:
