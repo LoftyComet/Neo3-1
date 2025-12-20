@@ -142,8 +142,6 @@ def unquestion_audio_record(record_id: str, db: Session = Depends(get_db)):
         raise HTTPException(status_code=404, detail="Record not found")
     return record
 
-# ...existing code...
-
 # --- Audio Endpoints ---
 
 @app.post("/audio/upload", response_model=schemas.AudioRecord)
@@ -163,7 +161,7 @@ def get_resonance_audio(city: str, current_hour: int, db: Session = Depends(get_
     策略一：时空共鸣
     前端传入当前城市和当前小时数 (0-23)，返回此时此刻最应景的声音。
     """
-    return crud.audio.get_city_resonance_records(db, city=city, current_hour=current_hour)
+    return audio_service.get_city_resonance_records(db, city=city, current_hour=current_hour)
 
 @app.get("/audio/culture", response_model=list[schemas.AudioRecord])
 def get_culture_audio(city: str, db: Session = Depends(get_db)):
@@ -171,7 +169,7 @@ def get_culture_audio(city: str, db: Session = Depends(get_db)):
     策略二：文化声标
     返回该城市最具文化代表性的声音（方言、叫卖、钟声等）。
     """
-    return crud.audio.get_cultural_recommendations(db, city=city)
+    return audio_service.get_cultural_recommendations(db, city=city)
 
 @app.get("/audio/roaming", response_model=list[schemas.AudioRecord])
 def get_roaming_audio(city: str, lat: float, lng: float, db: Session = Depends(get_db)):
@@ -180,7 +178,7 @@ def get_roaming_audio(city: str, lat: float, lng: float, db: Session = Depends(g
     前端传入目标城市和用户当前的经纬度。
     后台自动判断是“本地探索”还是“异地乡愁”，并返回对应声音。
     """
-    return crud.audio.get_roaming_records(db, city=city, user_lat=lat, user_lon=lng)
+    return audio_service.get_roaming_records(db, city=city, user_lat=lat, user_lon=lng)
 
 @app.get("/audio/{record_id}", response_model=schemas.AudioRecord)
 def read_audio(record_id: str, db: Session = Depends(get_db)):
@@ -188,5 +186,3 @@ def read_audio(record_id: str, db: Session = Depends(get_db)):
     if db_audio is None:
         raise HTTPException(status_code=404, detail="Audio not found")
     return db_audio
-
-# ...existing code...
