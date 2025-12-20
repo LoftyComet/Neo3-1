@@ -2,7 +2,7 @@ import sys
 import os
 import asyncio
 
-# 将当前目录添加到 Python 路径，确保能导入 backend 模块
+# 将当前目录添加到 Python 跑道，确保能导入 backend 模块
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from backend.app.core.database import SessionLocal
@@ -20,8 +20,14 @@ def init_embeddings():
         
         count = 0
         for record in records:
-            # 优先用生成的故事，如果没有则用原文
-            text_content = record.generated_story or record.transcript
+            # 组合多维度信息生成更丰富的语义向量
+            text_parts = [
+                f"城市: {record.city or ''}",
+                f"标签: {', '.join(record.scene_tags) if record.scene_tags else ''}",
+                f"情感: {record.emotion_tag or ''}",
+                f"内容: {record.generated_story or record.transcript or ''}"
+            ]
+            text_content = " ".join(text_parts)
             
             if not text_content:
                 print(f"Skipping record {record.id}: No text content.")
