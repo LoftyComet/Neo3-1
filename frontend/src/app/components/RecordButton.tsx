@@ -2,11 +2,18 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Mic, Square, Loader2 } from 'lucide-react';
+import { api } from '@/services/api';
 
-export const RecordButton: React.FC = () => {
+interface RecordButtonProps {
+  userId?: string;
+  onUploadSuccess?: () => void;
+}
+
+export const RecordButton: React.FC<RecordButtonProps> = ({ userId, onUploadSuccess }) => {
   const [isRecording, setIsRecording] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const [volume, setVolume] = useState(0); // 用于控制波纹大小
+  const [location, setLocation] = useState<{lat: number, lng: number} | null>(null);
   
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioContextRef = useRef<AudioContext | null>(null);
@@ -49,6 +56,9 @@ export const RecordButton: React.FC = () => {
       // 获取当前位置 (Apple 要求先有动作再获取权限体验更好)
       navigator.geolocation.getCurrentPosition((pos) => {
          console.log("Got Location", pos.coords);
+         setLocation({ lat: pos.coords.latitude, lng: pos.coords.longitude });
+      }, (err) => {
+        console.error("Location error", err);
       });
 
     } catch (err) {
@@ -67,12 +77,29 @@ export const RecordButton: React.FC = () => {
   };
 
   const handleUpload = async (blob: Blob) => {
+    if (!location) {
+      // Fallback if location wasn't captured during start
+       navigator.geolocation.getCurrentPosition(async (pos) => {
+         await performUpload(blob, pos.coords.latitude, pos.coords.longitude);
+       }, (err) => {
+         alert("Need location to upload.");
+       });
+       return;
+    }
+    await performUpload(blob, location.lat, location.lng);
+  };
+
+  const performUpload = async (blob: Blob, lat: number, lng: number) => {
     setIsUploading(true);
-    // Simulate API Call
-    setTimeout(() => {
+    try {
+      await api.uploadRecord(blob, lat, lng, userId);
+      if (onUploadSuccess) onUploadSuccess();
+    } catch (error) {
+      console.error("Upload failed", error);
+      alert("Upload failed");
+    } finally {
       setIsUploading(false);
-      // Trigger Ray Match Effect Here via Global State
-    }, 2000);
+    }
   };
 
   // 动态计算光晕大小

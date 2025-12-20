@@ -35,14 +35,6 @@ def get_db():
     finally:
         db.close()
 
-@app.get("/")
-def read_root():
-    return {"message": "Sound Memory Backend is running"}
-
-@app.get("/health")
-def health_check():
-    return {"status": "ok"}
-
 # --- User Endpoints ---
 
 @app.post("/users/", response_model=schemas.User)
