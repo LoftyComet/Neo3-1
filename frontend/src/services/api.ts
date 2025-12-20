@@ -3,16 +3,20 @@ import { AudioRecord } from "@/types";
 const API_BASE_URL = "http://localhost:8000";
 
 // Helper to map backend response to frontend type
-const mapRecord = (record: any): AudioRecord => ({
-  id: record.id,
-  latitude: record.latitude,
-  longitude: record.longitude,
-  emotion: record.emotion_tag || "Unknown",
-  tags: record.scene_tags || [],
-  story: record.generated_story || "No story generated yet.",
-  audioUrl: `${API_BASE_URL}/static/uploads/${record.file_path.split('/').pop()}`, // Assuming file_path is relative or we need to construct URL
-  createdAt: record.created_at,
-});
+const mapRecord = (record: any): AudioRecord => {
+  // Handle both Windows (\) and Unix (/) path separators
+  const filename = record.file_path.split(/[/\\]/).pop();
+  return {
+    id: record.id,
+    latitude: record.latitude,
+    longitude: record.longitude,
+    emotion: record.emotion_tag || "Unknown",
+    tags: record.scene_tags || [],
+    story: record.generated_story || "No story generated yet.",
+    audioUrl: `${API_BASE_URL}/static/uploads/${filename}`,
+    createdAt: record.created_at,
+  };
+};
 
 export const api = {
   // User
@@ -34,7 +38,8 @@ export const api = {
 
   // Records
   getMapRecords: async (): Promise<AudioRecord[]> => {
-    const response = await fetch(`${API_BASE_URL}/api/v1/records/map?limit=100`);
+    // Use latest records to ensure we see the most recent uploads
+    const response = await fetch(`${API_BASE_URL}/api/v1/records/latest?limit=100`);
     if (!response.ok) throw new Error("Failed to fetch records");
     const data = await response.json();
     return data.map(mapRecord);
