@@ -16,6 +16,33 @@ class AudioService:
         self.upload_dir = "backend/static/uploads"
         os.makedirs(self.upload_dir, exist_ok=True)
 
+    def _build_search_filter(self, query_str: str):
+        """
+        构建智能搜索过滤器：
+        1. 支持多关键词（空格分隔）
+        2. 覆盖 City, District, Tags, Transcript, Story 多个字段
+        """
+        if not query_str:
+            return True
+            
+        keywords = query_str.strip().split()
+        filters = []
+        
+        for kw in keywords:
+            # 对每个关键词，只要在任意字段出现即可
+            kw_filter = or_(
+                AudioRecord.city.ilike(f"%{kw}%"),
+                AudioRecord.district.ilike(f"%{kw}%"),
+                cast(AudioRecord.scene_tags, String).ilike(f"%{kw}%"),
+                AudioRecord.transcript.ilike(f"%{kw}%"),
+                AudioRecord.generated_story.ilike(f"%{kw}%")
+            )
+            filters.append(kw_filter)
+            
+        # 所有关键词条件必须同时满足 (AND 关系)，提高精准度
+        # 如果觉得太严，可以改为 or_(*filters)
+        return and_(*filters)
+
     async def process_audio_background(self, record_id: str, file_path: str):
         """
         Background task to process audio using AIService and update the database.
@@ -55,72 +82,63 @@ class AudioService:
 
     def get_city_resonance_records(self, db: Session, city: str, current_hour: int, limit: int = 20):
         """
-        策略一：时空共鸣 (Time-Space Resonance)
-        逻辑：获取指定城市（或关键词）中，与当前时间段（前后2小时）氛围相符的声音。
-        处理了跨午夜的时间计算（例如 23:00 的范围是 21:00 - 01:00）。
+        策略一：时空共鸣 (Time-Space Resonance) - 增强版
+        逻辑：
+        1. 优先：搜索词 + 当前时间段（UTC修正后）。
+        2. 兜底：如果优先策略无结果，则忽略时间限制，仅按搜索词返回热门内容。
         """
-        # 1. 模糊匹配城市或标签 (修复：支持模糊搜索和标签搜索)
-        search_filter = or_(
-            AudioRecord.city.ilike(f"%{city}%"),
-            cast(AudioRecord.scene_tags, String).ilike(f"%{city}%"),
-            AudioRecord.transcript.ilike(f"%{city}%")
-        )
+        # 1. 构建搜索条件
+        search_filter = self._build_search_filter(city)
 
-        # 2. 时间过滤
-        # 修复：数据库存的是 UTC，前端传的是本地时间（假设 UTC+8）。
-        # 我们需要将本地时间转换为 UTC 时间进行查询。
-        # 例如：下午 14:00 (UTC+8) -> 06:00 (UTC)
+        # 2. 构建时间条件 (UTC+8 -> UTC)
         target_utc_hour = (current_hour - 8) % 24
-        
         min_hour = target_utc_hour - 2
         max_hour = target_utc_hour + 2
         
         time_filter = None
-        
-        # 处理跨天逻辑
         if min_hour < 0:
-            # 例如 target=1 (01:00), min=-1 (23:00), max=3 (03:00)
-            # 范围应为: [23, 24) OR [0, 3]
             time_filter = or_(
                 extract('hour', AudioRecord.created_at) >= (24 + min_hour),
                 extract('hour', AudioRecord.created_at) <= max_hour
             )
         elif max_hour >= 24:
-            # 例如 target=23 (23:00), min=21, max=25 (01:00)
-            # 范围应为: [21, 24) OR [0, 1]
             time_filter = or_(
                 extract('hour', AudioRecord.created_at) >= min_hour,
                 extract('hour', AudioRecord.created_at) <= (max_hour - 24)
             )
         else:
-            # 正常范围
             time_filter = extract('hour', AudioRecord.created_at).between(min_hour, max_hour)
         
-        return db.query(AudioRecord).filter(
+        # 3. 尝试优先查询 (时间 + 关键词)
+        records = db.query(AudioRecord).filter(
             search_filter,
             time_filter
         ).order_by(
             AudioRecord.like_count.desc()
         ).limit(limit).all()
+        
+        # 4. 兜底策略：如果没结果，去掉时间限制
+        if not records:
+            print(f"No resonance records found for '{city}' at hour {target_utc_hour}, falling back to general search.")
+            records = db.query(AudioRecord).filter(
+                search_filter
+            ).order_by(
+                AudioRecord.like_count.desc()
+            ).limit(limit).all()
+            
+        return records
 
     def get_cultural_recommendations(self, db: Session, city: str, limit: int = 20):
         """
-        策略二：文化声标 (Cultural Landmarks)
-        逻辑：优先展示具有强烈文化属性的声音。
-        通过 SQL Case When 动态计算权重，不依赖外部搜索引擎。
+        策略二：文化声标 (Cultural Landmarks) - 增强版
         """
-        # 1. 模糊匹配城市或标签 (修复：支持模糊搜索和标签搜索)
-        search_filter = or_(
-            AudioRecord.city.ilike(f"%{city}%"),
-            cast(AudioRecord.scene_tags, String).ilike(f"%{city}%"),
-            AudioRecord.transcript.ilike(f"%{city}%")
-        )
+        # 1. 构建搜索条件
+        search_filter = self._build_search_filter(city)
 
         # 定义文化关键词
-        cultural_keywords = ['方言', '叫卖', '钟声', '戏曲', '集市', '夜市', '地铁报站', '寺庙', '老街', '茶馆']
+        cultural_keywords = ['方言', '叫卖', '钟声', '戏曲', '集市', '夜市', '地铁报站', '寺庙', '老街', '茶馆', '博物馆', '历史']
         
-        # 构建加权逻辑: 匹配一个关键词得 1 分
-        # 注意：scene_tags 是 JSON 类型，需要 cast 为 String 才能进行 ilike 模糊匹配
+        # 构建加权逻辑
         score_expression = sum(
             case(
                 (cast(AudioRecord.scene_tags, String).ilike(f"%{kw}%"), 1),
@@ -138,23 +156,13 @@ class AudioService:
 
     def get_roaming_records(self, db: Session, city: str, user_lat: float, user_lon: float, limit: int = 20):
         """
-        策略三：乡愁漫游 (Nostalgic Roaming)
-        逻辑：
-        1. 计算目标城市所有音频的几何中心。
-        2. 计算用户当前位置与该中心的距离。
-        3. 如果距离 > 100km，判定为“异地/乡愁模式”，优先推荐生活化、方言类声音。
-        4. 如果距离 <= 100km，判定为“本地/探索模式”，优先推荐地标、景点类声音。
+        策略三：乡愁漫游 (Nostalgic Roaming) - 增强版
         """
-        
-        # 1. 模糊匹配城市或标签 (修复：支持模糊搜索和标签搜索)
-        search_filter = or_(
-            AudioRecord.city.ilike(f"%{city}%"),
-            cast(AudioRecord.scene_tags, String).ilike(f"%{city}%"),
-            AudioRecord.transcript.ilike(f"%{city}%")
-        )
+        # 1. 构建搜索条件
+        search_filter = self._build_search_filter(city)
 
-        # 1. 计算目标城市的几何中心 (无需外部 API，直接利用现有数据)
-        # ST_Centroid 计算几何中心，ST_Collect 将所有点聚合
+        # 2. 尝试计算几何中心
+        # 注意：如果搜索结果为空，或者点太少，中心点计算可能无意义
         city_center_query = db.query(
             func.ST_X(func.ST_Centroid(func.ST_Collect(AudioRecord.location_geo))),
             func.ST_Y(func.ST_Centroid(func.ST_Collect(AudioRecord.location_geo)))
@@ -162,10 +170,10 @@ class AudioService:
         
         is_roaming = False
         
+        # 只有当确实找到了中心点，才进行漫游判断
         if city_center_query and city_center_query[0] is not None:
             city_lon, city_lat = city_center_query
             
-            # 2. 计算距离 (使用 PostGIS ST_DistanceSphere 计算球面距离，单位：米)
             user_point = WKTElement(f'POINT({user_lon} {user_lat})', srid=4326)
             city_point = func.ST_SetSRID(func.ST_MakePoint(city_lon, city_lat), 4326)
             
@@ -173,13 +181,14 @@ class AudioService:
             
             if distance_meters and distance_meters > 100000: # 100公里
                 is_roaming = True
+        else:
+            # 如果算不出中心点（比如搜了一个不存在的词），默认不做特殊加权，直接返回搜索结果
+            pass
                 
         # 3. 根据模式定义关键词
         if is_roaming:
-            # 【乡愁模式】：游子更想听到的生活气息
             keywords = ["生活", "方言", "雨声", "做饭", "猫", "狗", "巷子", "童年", "老", "家乡", "煮"]
         else:
-            # 【探索模式】：游客更想听到的地标打卡
             keywords = ["景点", "地标", "广场", "活动", "打卡", "中心", "夜景", "游乐园", "博物馆"]
             
         # 4. 构建加权查询
