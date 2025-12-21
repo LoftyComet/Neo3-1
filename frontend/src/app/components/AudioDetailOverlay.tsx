@@ -1,7 +1,7 @@
 // src/app/components/AudioDetailOverlay.tsx
 import React, { useState, useRef, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { X, Play, Pause, Heart, HelpCircle, ChevronLeft, ChevronRight, ChevronDown, Maximize2 } from 'lucide-react';
+import { motion } from 'framer-motion';
+import { X, Play, Pause, Heart, HelpCircle, ChevronLeft, ChevronRight } from 'lucide-react';
 import { AudioRecord } from '@/types';
 import { api } from '@/services/api';
 
@@ -10,20 +10,9 @@ interface DetailProps {
   onClose: () => void;
   onNext?: () => void;
   onPrev?: () => void;
-  isMobile?: boolean;
-  isMinimized?: boolean;
-  onMinimize?: () => void;
 }
 
-export const AudioDetailOverlay: React.FC<DetailProps> = ({ 
-  record, 
-  onClose, 
-  onNext, 
-  onPrev, 
-  isMobile,
-  isMinimized = false,
-  onMinimize
-}) => {
+export const AudioDetailOverlay: React.FC<DetailProps> = ({ record, onClose, onNext, onPrev }) => {
   const [isPlaying, setIsPlaying] = useState(false);
   const [playbackTime, setPlaybackTime] = useState(0);
   const [duration, setDuration] = useState(0);
@@ -189,216 +178,120 @@ export const AudioDetailOverlay: React.FC<DetailProps> = ({
 
   const progress = duration > 0 ? (playbackTime / duration) * 100 : 0;
 
-  // Mini Player View
-  if (isMinimized && isMobile) {
-    return (
-      <motion.div
-        initial={{ y: 100, opacity: 0 }}
-        animate={{ y: 0, opacity: 1 }}
-        exit={{ y: 100, opacity: 0 }}
-        className="fixed bottom-24 left-4 right-4 z-50"
-      >
-        <div className="bg-[#0a0a0a]/90 backdrop-blur-xl border border-white/10 rounded-2xl p-3 shadow-2xl flex items-center gap-3"
-             onClick={onMinimize} // Click body to expand
-        >
-          {/* Play/Pause Button */}
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              handlePlayPause();
-            }}
-            className="w-10 h-10 bg-white text-black rounded-full flex items-center justify-center flex-shrink-0"
-          >
-            {isPlaying ? <Pause size={16} fill="currentColor" /> : <Play size={16} className="ml-0.5" fill="currentColor" />}
-          </button>
-
-          {/* Info */}
-          <div className="flex-1 min-w-0">
-            <div className="text-xs font-bold text-white truncate">{record.story}</div>
-            <div className="text-[10px] text-white/50 flex items-center gap-2">
-              <span>{formatTime(playbackTime)} / {formatTime(duration)}</span>
-              <span className="w-1 h-1 rounded-full bg-white/20" />
-              <span>{record.emotion}</span>
-            </div>
-          </div>
-
-          {/* Actions */}
-          <div className="flex items-center gap-2">
-            <button 
-              onClick={(e) => {
-                e.stopPropagation();
-                onMinimize?.();
-              }}
-              className="p-2 text-white/40 hover:text-white"
-            >
-              <Maximize2 size={18} />
-            </button>
-            <button 
-              onClick={(e) => {
-                e.stopPropagation();
-                onClose();
-              }}
-              className="p-2 text-white/40 hover:text-white"
-            >
-              <X size={18} />
-            </button>
-          </div>
-          
-          {/* Progress Bar Background */}
-          <div className="absolute bottom-0 left-2 right-2 h-[2px] bg-white/5 rounded-full overflow-hidden">
-            <motion.div 
-              className="h-full bg-white/50"
-              style={{ width: `${progress}%` }}
-            />
-          </div>
-        </div>
-      </motion.div>
-    );
-  }
-
-  const variants = isMobile ? {
-    initial: { y: "100%" },
-    animate: { y: 0 },
-    exit: { y: "100%" }
-  } : {
-    initial: { opacity: 0, x: 20, scale: 0.95 },
-    animate: { opacity: 1, x: 0, scale: 1 },
-    exit: { opacity: 0, x: 20, scale: 0.95 }
-  };
-
   return (
     <motion.div
-      variants={variants}
-      initial="initial"
-      animate="animate"
-      exit="exit"
+      initial={{ opacity: 0, x: 20, scale: 0.95 }}
+      animate={{ opacity: 1, x: 0, scale: 1 }}
+      exit={{ opacity: 0, x: 20, scale: 0.95 }}
       transition={{ type: "spring", stiffness: 260, damping: 20 }}
-      className={isMobile 
-        ? "fixed bottom-0 left-0 right-0 z-50" 
-        : "absolute top-24 right-6 w-80 md:w-96 z-40"
-      }
+      className="absolute top-24 right-6 w-80 md:w-96 z-40"
     >
       {/* Apple Style Glassmorphism Card */}
-      <div className={`relative p-8 shadow-[0_20px_50px_rgba(0,0,0,0.5)] text-white overflow-hidden border border-white/20 bg-[#0a0a0a]/90 backdrop-blur-2xl ${
-        isMobile ? 'rounded-t-[2.5rem] pb-12 h-[85vh] flex flex-col' : 'rounded-[2.5rem]'
-      }`}>
+      <div className="relative rounded-[2.5rem] p-8 shadow-[0_20px_50px_rgba(0,0,0,0.5)] text-white overflow-hidden border border-white/20 bg-black/40 backdrop-blur-2xl">
         
-        {/* Mobile Drag Handle */}
-        {isMobile && (
-          <div 
-            className="absolute top-0 left-0 right-0 h-12 flex items-center justify-center z-10"
-            onClick={onMinimize}
-          >
-            <div className="w-12 h-1.5 bg-white/20 rounded-full" />
-          </div>
-        )}
-
         {/* Background Gradient Glow */}
         <div className="absolute -top-24 -right-24 w-48 h-48 bg-indigo-500/20 blur-[80px] rounded-full pointer-events-none" />
         <div className="absolute -bottom-24 -left-24 w-48 h-48 bg-blue-500/10 blur-[80px] rounded-full pointer-events-none" />
 
         {/* Close Button */}
         <button 
-          onClick={isMobile ? onMinimize : onClose} 
-          className="absolute top-6 right-6 p-2 bg-white/5 hover:bg-white/10 rounded-full transition-all duration-300 border border-white/10 active:scale-90 z-20"
+          onClick={onClose} 
+          className="absolute top-6 right-6 p-2 bg-white/5 hover:bg-white/10 rounded-full transition-all duration-300 border border-white/10 active:scale-90"
         >
-          {isMobile ? <ChevronDown size={18} className="text-white/70" /> : <X size={18} className="text-white/70" />}
+          <X size={18} className="text-white/70" />
         </button>
 
-        {/* Scrollable Content for Mobile */}
-        <div className={`flex-1 ${isMobile ? 'overflow-y-auto custom-scrollbar mt-8' : ''}`}>
-          {/* Header: Emotion Tag */}
-          <div className="flex items-center space-x-3 mb-6">
-            <div className="px-4 py-1.5 text-[10px] font-bold uppercase tracking-[0.2em] bg-white/10 rounded-full border border-white/10 backdrop-blur-md text-white/90">
-              {record.emotion}
-            </div>
-            <div className="h-1 w-1 rounded-full bg-white/20" />
-            <span className="text-[10px] text-white/40 font-medium tracking-wider">
-              {new Date(record.createdAt).toLocaleDateString('zh-CN', { month: 'long', day: 'numeric' })}
-            </span>
+        {/* Header: Emotion Tag */}
+        <div className="flex items-center space-x-3 mb-6">
+          <div className="px-4 py-1.5 text-[10px] font-bold uppercase tracking-[0.2em] bg-white/10 rounded-full border border-white/10 backdrop-blur-md text-white/90">
+            {record.emotion}
+          </div>
+          <div className="h-1 w-1 rounded-full bg-white/20" />
+          <span className="text-[10px] text-white/40 font-medium tracking-wider">
+            {new Date(record.createdAt).toLocaleDateString('zh-CN', { month: 'long', day: 'numeric' })}
+          </span>
+        </div>
+
+        {/* Story Content */}
+        <h2 className="text-2xl font-bold mb-3 tracking-tight bg-gradient-to-br from-white to-white/60 bg-clip-text text-transparent">
+          声音的故事
+        </h2>
+        <p className="text-sm text-white/70 leading-relaxed font-light mb-8 line-clamp-4 hover:line-clamp-none transition-all duration-500">
+          {record.story}
+        </p>
+
+        {/* Audio Player Section */}
+        <div className="bg-white/5 rounded-[2rem] mb-8 p-6 border border-white/10 shadow-inner">
+          {/* Play Controls */}
+          <div className="flex items-center justify-between mb-6 px-2">
+            {/* Prev Button */}
+            <button 
+              onClick={onPrev}
+              className="p-3 text-white/40 hover:text-white hover:bg-white/5 rounded-full transition-all duration-300 active:scale-75"
+              disabled={!onPrev}
+            >
+              <ChevronLeft size={28} />
+            </button>
+
+            {/* Play/Pause */}
+            <button
+              onClick={handlePlayPause}
+              className="w-16 h-16 bg-white text-black rounded-full flex items-center justify-center shadow-[0_10px_25px_rgba(255,255,255,0.2)] hover:scale-105 transition-all duration-300 active:scale-90 group"
+            >
+              {isPlaying ? (
+                <Pause size={24} fill="currentColor" />
+              ) : (
+                <Play size={24} className="ml-1" fill="currentColor" />
+              )}
+            </button>
+
+            {/* Next Button */}
+            <button 
+              onClick={onNext}
+              className="p-3 text-white/40 hover:text-white hover:bg-white/5 rounded-full transition-all duration-300 active:scale-75"
+              disabled={!onNext}
+            >
+              <ChevronRight size={28} />
+            </button>
           </div>
 
-          {/* Story Content */}
-          <h2 className="text-2xl font-bold mb-3 tracking-tight bg-gradient-to-br from-white to-white/60 bg-clip-text text-transparent">
-            回声故事
-          </h2>
-          <p className={`text-sm text-white/70 leading-relaxed font-light mb-8 transition-all duration-500 ${isMobile ? '' : 'line-clamp-4 hover:line-clamp-none'}`}>
-            {record.story}
-          </p>
-
-          {/* Audio Player Section */}
-          <div className="bg-white/5 rounded-[2rem] mb-8 p-6 border border-white/10 shadow-inner">
-            {/* Play Controls */}
-            <div className="flex items-center justify-between mb-6 px-2">
-              {/* Prev Button */}
-              <button 
-                onClick={onPrev}
-                className="p-3 text-white/40 hover:text-white hover:bg-white/5 rounded-full transition-all duration-300 active:scale-75"
-                disabled={!onPrev}
-              >
-                <ChevronLeft size={28} />
-              </button>
-
-              {/* Play/Pause */}
-              <button
-                onClick={handlePlayPause}
-                className="w-16 h-16 bg-white text-black rounded-full flex items-center justify-center shadow-[0_10px_25px_rgba(255,255,255,0.2)] hover:scale-105 transition-all duration-300 active:scale-90 group"
-              >
-                {isPlaying ? (
-                  <Pause size={24} fill="currentColor" />
-                ) : (
-                  <Play size={24} className="ml-1" fill="currentColor" />
-                )}
-              </button>
-
-              {/* Next Button */}
-              <button 
-                onClick={onNext}
-                className="p-3 text-white/40 hover:text-white hover:bg-white/5 rounded-full transition-all duration-300 active:scale-75"
-                disabled={!onNext}
-              >
-                <ChevronRight size={28} />
-              </button>
+          {/* Progress Bar */}
+          <div className="space-y-3 px-2">
+            <div className="relative h-1.5 bg-white/10 rounded-full overflow-hidden">
+              <motion.div
+                className="absolute left-0 top-0 h-full bg-white rounded-full"
+                initial={{ width: 0 }}
+                animate={{ width: `${progress}%` }}
+                transition={{ type: "tween", ease: "linear" }}
+              />
             </div>
-
-            {/* Progress Bar */}
-            <div className="space-y-3 px-2">
-              <div className="relative h-1.5 bg-white/10 rounded-full overflow-hidden">
-                <motion.div
-                  className="absolute left-0 top-0 h-full bg-white rounded-full"
-                  initial={{ width: 0 }}
-                  animate={{ width: `${progress}%` }}
-                  transition={{ type: "tween", ease: "linear" }}
-                />
-              </div>
-              <div className="flex justify-between text-[10px] font-medium tracking-tighter text-white/30">
-                <span>{formatTime(playbackTime)}</span>
-                <span>{formatTime(duration)}</span>
-              </div>
+            <div className="flex justify-between text-[10px] font-medium tracking-tighter text-white/30">
+              <span>{formatTime(playbackTime)}</span>
+              <span>{formatTime(duration)}</span>
             </div>
           </div>
+        </div>
 
-          {/* Footer Actions */}
-          <div className="flex justify-between items-center pt-2 pb-8">
-             <div className="flex flex-wrap gap-2 max-w-[60%]">
-               {record.tags.slice(0, 2).map(tag => (
-                 <span key={tag} className="text-[10px] font-medium text-[#A7BBC7] px-2 py-0.5 bg-white/5 rounded-md border border-white/10">
-                   #{tag}
-                 </span>
-               ))}
-             </div>
-             <div className="flex items-center space-x-5">
-               <button onClick={handleLike} className="flex flex-col items-center gap-1 group">
-                 <Heart size={22} className={`transition-all duration-300 ${isLiked ? 'fill-[#B48484] text-[#B48484] scale-110' : 'text-white/30 group-hover:text-[#B48484]'}`} />
-                 <span className="text-[9px] font-bold text-white/30 group-hover:text-white/60">{likeCount}</span>
-               </button>
-               
-               <button onClick={handleQuestion} className="flex flex-col items-center gap-1 group">
-                 <HelpCircle size={22} className={`transition-all duration-300 ${isQuestioned ? 'text-[#D4A373] scale-110' : 'text-white/30 group-hover:text-[#D4A373]'}`} />
-                 <span className="text-[9px] font-bold text-white/30 group-hover:text-white/60">{questionCount}</span>
-               </button>
-             </div>
-          </div>
+        {/* Footer Actions */}
+        <div className="flex justify-between items-center pt-2">
+           <div className="flex flex-wrap gap-2 max-w-[60%]">
+             {record.tags.slice(0, 2).map(tag => (
+               <span key={tag} className="text-[10px] font-medium text-[#A7BBC7] px-2 py-0.5 bg-white/5 rounded-md border border-white/10">
+                 #{tag}
+               </span>
+             ))}
+           </div>
+           <div className="flex items-center space-x-5">
+             <button onClick={handleLike} className="flex flex-col items-center gap-1 group">
+               <Heart size={22} className={`transition-all duration-300 ${isLiked ? 'fill-[#B48484] text-[#B48484] scale-110' : 'text-white/30 group-hover:text-[#B48484]'}`} />
+               <span className="text-[9px] font-bold text-white/30 group-hover:text-white/60">{likeCount}</span>
+             </button>
+             
+             <button onClick={handleQuestion} className="flex flex-col items-center gap-1 group">
+               <HelpCircle size={22} className={`transition-all duration-300 ${isQuestioned ? 'text-[#D4A373] scale-110' : 'text-white/30 group-hover:text-[#D4A373]'}`} />
+               <span className="text-[9px] font-bold text-white/30 group-hover:text-white/60">{questionCount}</span>
+             </button>
+           </div>
         </div>
       </div>
     </motion.div>

@@ -26,7 +26,6 @@ interface LeafletMapProps {
   visitedAudioIds?: Set<string>;
   isLocating?: boolean;
   onLocationReached?: () => void;
-  isRecordingMode?: boolean;
 }
 
 // Component to handle map view updates and animations
@@ -34,14 +33,12 @@ function MapController({
   selectedAudio,
   userLocation,
   isLocating,
-  onLocationReached,
-  isRecordingMode
+  onLocationReached
 }: { 
   selectedAudio?: AudioRecord | null,
   userLocation?: { lat: number; lng: number } | null,
   isLocating?: boolean,
-  onLocationReached?: () => void,
-  isRecordingMode?: boolean
+  onLocationReached?: () => void
 }) {
   const map = useMap();
   
@@ -49,27 +46,27 @@ function MapController({
   useEffect(() => {
     if (isLocating && userLocation) {
       map.flyTo([userLocation.lat, userLocation.lng], 14, {
-        duration: isRecordingMode ? 4 : 2.5,
+        duration: 2.5,
         easeLinearity: 0.25
       });
       
       const timer = setTimeout(() => {
         onLocationReached?.();
-      }, isRecordingMode ? 4000 : 2500);
+      }, 2500);
       
       return () => clearTimeout(timer);
     }
-  }, [isLocating, userLocation, map, onLocationReached, isRecordingMode]);
+  }, [isLocating, userLocation, map, onLocationReached]);
 
   // Center on selected audio
   useEffect(() => {
     if (selectedAudio) {
-      map.flyTo([selectedAudio.latitude, selectedAudio.longitude], isRecordingMode ? 16 : 15, {
-        duration: isRecordingMode ? 5 : 1.5,
+      map.flyTo([selectedAudio.latitude, selectedAudio.longitude], 15, {
+        duration: 1.5,
         easeLinearity: 0.25
       });
     }
-  }, [selectedAudio, map, isRecordingMode]);
+  }, [selectedAudio, map]);
 
   return null;
 }
@@ -88,12 +85,12 @@ const CustomMarker = ({
 }) => (
   <div className={`relative w-[80px] h-[80px] flex items-center justify-center transition-all duration-1000 ${
     isSelected ? 'scale-125' : 'scale-100'
-  } ${!isVisited && !isSelected ? 'grayscale-[0.1] opacity-60' : 'grayscale-0 opacity-100'}`}>
+  } ${!isVisited && !isSelected ? 'grayscale-[0.4] opacity-30' : 'grayscale-0 opacity-100'}`}>
     
     {/* Outer Halo - Morandi Soft Glow */}
     <div
       className={`absolute inset-0 rounded-full transition-all duration-1000 ${
-        isSelected ? 'opacity-80 scale-110' : isVisited ? 'opacity-40 scale-90' : 'opacity-30 scale-75'
+        isSelected ? 'opacity-80 scale-110' : isVisited ? 'opacity-40 scale-90' : 'opacity-10 scale-75'
       } ${isVisited ? 'animate-pulse-brisk' : 'animate-pulse-soothing'}`}
       style={{
         background: `radial-gradient(circle, ${color}22 0%, transparent 75%)`,
@@ -108,7 +105,7 @@ const CustomMarker = ({
       className="absolute w-8 h-8 rounded-full blur-xl transition-all duration-1000"
       style={{
         backgroundColor: color,
-        opacity: isSelected ? 0.6 : isVisited ? 0.3 : 0.3,
+        opacity: isSelected ? 0.6 : isVisited ? 0.3 : 0.1,
         transform: isSelected ? 'scale(1.2)' : 'scale(1)'
       }}
     />
@@ -145,8 +142,7 @@ export default function LeafletMap({
   selectedAudio, 
   visitedAudioIds,
   isLocating,
-  onLocationReached,
-  isRecordingMode
+  onLocationReached
 }: LeafletMapProps) {
   const defaultCenter: [number, number] = [
     MAP_CONFIG.DEFAULT_VIEW_STATE.latitude,
@@ -191,7 +187,6 @@ export default function LeafletMap({
         userLocation={userLocation}
         isLocating={isLocating}
         onLocationReached={onLocationReached}
-        isRecordingMode={isRecordingMode}
       />
       
       {/* Layer Management for "Discovery" Effect */}

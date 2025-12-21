@@ -12,7 +12,7 @@ interface Particle {
   targetAlpha: number;
 }
 
-export default function ParticleBackground({ isHighDensity = false }: { isHighDensity?: boolean }) {
+export default function ParticleBackground() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
   useEffect(() => {
@@ -32,16 +32,15 @@ export default function ParticleBackground({ isHighDensity = false }: { isHighDe
     };
 
     const initParticles = () => {
-      const baseCount = (window.innerWidth * window.innerHeight) / 15000;
-      const particleCount = Math.floor(isHighDensity ? baseCount * 2.5 : baseCount);
+      const particleCount = Math.floor((window.innerWidth * window.innerHeight) / 15000);
       particles = [];
       for (let i = 0; i < particleCount; i++) {
         particles.push({
           x: Math.random() * canvas.width,
           y: Math.random() * canvas.height,
-          vx: (Math.random() - 0.5) * (isHighDensity ? 0.4 : 0.2),
-          vy: (Math.random() - 0.5) * (isHighDensity ? 0.4 : 0.2),
-          size: Math.random() * (isHighDensity ? 3 : 2) + 0.5,
+          vx: (Math.random() - 0.5) * 0.2,
+          vy: (Math.random() - 0.5) * 0.2,
+          size: Math.random() * 2 + 0.5,
           alpha: Math.random() * 0.5,
           targetAlpha: Math.random() * 0.5 + 0.1
         });

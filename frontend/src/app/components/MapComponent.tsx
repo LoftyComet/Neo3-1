@@ -22,7 +22,6 @@ interface MapComponentProps {
   visitedAudioIds?: Set<string>;
   isLocating?: boolean;
   onLocationReached?: () => void;
-  isRecordingMode?: boolean;
 }
 
 export default function MapComponent({
@@ -32,15 +31,14 @@ export default function MapComponent({
   selectedAudio,
   visitedAudioIds,
   isLocating,
-  onLocationReached,
-  isRecordingMode
+  onLocationReached
 }: MapComponentProps) {
   return (
     <div className="w-full h-screen relative overflow-hidden bg-black">
       
       {/* Particle Background Layer - Behind the map but visible through transparent/filtered tiles */}
       <div className="absolute inset-0 z-0 pointer-events-none opacity-60">
-         <ParticleBackground isHighDensity={isRecordingMode} />
+         <ParticleBackground />
       </div>
 
       {/* Map Layer */}
@@ -53,15 +51,14 @@ export default function MapComponent({
           visitedAudioIds={visitedAudioIds}
           isLocating={isLocating}
           onLocationReached={onLocationReached}
-          isRecordingMode={isRecordingMode}
         />
       </div>
 
       {/* Vignette Effect - On top of map */}
-      <div className={`absolute inset-0 pointer-events-none z-20 bg-radial-gradient from-transparent to-black transition-opacity duration-1000 ${isRecordingMode ? 'opacity-90' : 'opacity-80'}`} />
+      <div className="absolute inset-0 pointer-events-none z-20 bg-radial-gradient from-transparent to-black opacity-80" />
 
       {/* UI Overlay */}
-      <div className={`absolute inset-0 pointer-events-none z-30 transition-opacity duration-1000 ${isRecordingMode ? 'opacity-0' : 'opacity-100'}`}>
+      <div className="absolute inset-0 pointer-events-none z-30">
         {/* Map info overlay */}
         <div className="absolute top-24 left-6 glass-panel p-6 rounded-2xl max-w-xs text-white pointer-events-auto transition-all hover:bg-opacity-80">
           <div className="flex items-center gap-2 mb-2">

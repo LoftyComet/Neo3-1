@@ -18,10 +18,6 @@ export default function Home() {
   const [visitedAudioIds, setVisitedAudioIds] = useState<Set<string>>(new Set());
   const [isLocating, setIsLocating] = useState(false);
   const [showDiscoveryPrompt, setShowDiscoveryPrompt] = useState(false);
-  const [isRecordingMode, setIsRecordingMode] = useState(false);
-  const [viewMode, setViewMode] = useState<'web' | 'mobile' | null>(null);
-  const [isPanelExpanded, setIsPanelExpanded] = useState(false);
-  const [isAudioDetailMinimized, setIsAudioDetailMinimized] = useState(false);
 
 
   // Initialize User
@@ -102,26 +98,9 @@ export default function Home() {
     }
   };
 
-  // Cinematic Tour Logic
-  useEffect(() => {
-    let tourInterval: NodeJS.Timeout;
-    if (isRecordingMode && audioRecords.length > 0) {
-      let currentIndex = 0;
-      const runTour = () => {
-        handleMarkerClick(audioRecords[currentIndex]);
-        currentIndex = (currentIndex + 1) % audioRecords.length;
-      };
-      
-      runTour(); // Start immediately
-      tourInterval = setInterval(runTour, 6000); // Move every 6 seconds
-    }
-    return () => clearInterval(tourInterval);
-  }, [isRecordingMode, audioRecords]);
-
   // Handle marker click
   const handleMarkerClick = (record: AudioRecord) => {
     setSelectedAudio(record);
-    setIsAudioDetailMinimized(false); // Reset minimized state when opening new audio
     setVisitedAudioIds(prev => {
       const next = new Set(prev);
       next.add(record.id);
@@ -151,36 +130,6 @@ export default function Home() {
 
   return (
     <main className="w-full h-screen overflow-hidden bg-black text-white relative">
-       {/* Mode Selection Screen */}
-       {!viewMode && (
-         <div className="absolute inset-0 z-[100] bg-black/90 backdrop-blur-3xl flex flex-col items-center justify-center space-y-12 animate-in fade-in duration-1000">
-           <div className="text-center space-y-4">
-             <h1 className="text-5xl font-bold tracking-tighter text-white drop-shadow-[0_0_30px_rgba(255,255,255,0.3)]">
-               EchoMap
-             </h1>
-             <p className="text-white/40 text-sm tracking-[0.2em] uppercase">声音记忆图谱</p>
-           </div>
-           
-           <div className="flex gap-8">
-             <button 
-               onClick={() => setViewMode('web')}
-               className="group relative w-40 h-48 rounded-2xl bg-white/5 border border-white/10 hover:bg-white/10 transition-all duration-500 flex flex-col items-center justify-center gap-4 hover:scale-105 hover:border-white/30"
-             >
-               <div className="w-16 h-12 rounded border border-white/20 group-hover:border-white/60 transition-colors" />
-               <span className="text-xs text-white/60 tracking-widest group-hover:text-white">DESKTOP</span>
-             </button>
-             
-             <button 
-               onClick={() => setViewMode('mobile')}
-               className="group relative w-40 h-48 rounded-2xl bg-white/5 border border-white/10 hover:bg-white/10 transition-all duration-500 flex flex-col items-center justify-center gap-4 hover:scale-105 hover:border-white/30"
-             >
-               <div className="w-8 h-14 rounded border border-white/20 group-hover:border-white/60 transition-colors" />
-               <span className="text-xs text-white/60 tracking-widest group-hover:text-white">MOBILE</span>
-             </button>
-           </div>
-         </div>
-       )}
-
        {/* 背景地图 */}
        <MapComponent
          audioRecords={audioRecords}
@@ -192,20 +141,11 @@ export default function Home() {
          onLocationReached={handleLocationReached}
        />
 
-       {/* 录制模式切换器 (仅在左下角微弱显示) */}
-       <button 
-         onClick={() => setIsRecordingMode(!isRecordingMode)}
-         className="absolute bottom-6 left-6 z-50 p-2 rounded-full bg-white/5 hover:bg-red-500/20 border border-white/10 transition-all group"
-         title="电影级演示模式"
-       >
-         <div className={`w-2 h-2 rounded-full ${isRecordingMode ? 'bg-red-500 animate-pulse' : 'bg-white/20 group-hover:bg-white/40'}`} />
-       </button>
-
        {/* 顶层 UI 元素 */}
-       <div className={`pointer-events-none absolute inset-0 z-10 transition-opacity duration-1000 ${isRecordingMode ? 'opacity-0' : 'opacity-100'}`}>
+       <div className="pointer-events-none absolute inset-0 z-10">
           {/* Logo 或 标题 - 保持在左上角 */}
           <h1 className="absolute top-6 left-6 text-2xl font-bold tracking-tighter mix-blend-difference text-white drop-shadow-md">
-            EchoMap
+            ECHOES
           </h1>
 
           {/* Discovery Prompt */}
@@ -231,14 +171,8 @@ export default function Home() {
             </div>
           )}
 
-          {/* 城市搜索与推荐面板 */}
-          <div className={`absolute pointer-events-auto space-y-4 transition-all duration-500 ${
-            viewMode === 'mobile' 
-              ? 'top-20 left-4 right-4 w-auto z-30' 
-              : 'top-6 right-6 w-80 z-30'
-          } ${
-            (viewMode === 'mobile' && !!selectedAudio && !isAudioDetailMinimized) ? '-translate-y-[200%] opacity-0 pointer-events-none' : 'translate-y-0 opacity-100'
-          }`}>
+          {/* 城市搜索与推荐面板 - 移至右上角防止重叠 */}
+          <div className="absolute top-6 right-6 w-80 pointer-events-auto space-y-4">
             <div className="bg-white/90 backdrop-blur-md p-2 rounded-lg shadow-lg flex items-center border border-gray-200">
               <input 
                 type="text" 
@@ -256,34 +190,20 @@ export default function Home() {
               userLng={userLocation?.lng || 121.4737}
               onPlayAudio={handleMarkerClick}
               selectedAudio={selectedAudio}
-              isMobile={viewMode === 'mobile'}
-              isHidden={!!selectedAudio && !isAudioDetailMinimized}
-              onExpandChange={setIsPanelExpanded}
             />
           </div>
        </div>
 
        {/* 录音按钮 (允许点击) */}
-       {!isRecordingMode && (
-         <div className={`transition-all duration-500 z-20 ${
-           (viewMode === 'mobile' && (isPanelExpanded || (!!selectedAudio && !isAudioDetailMinimized))) 
-             ? 'opacity-0 translate-y-20 pointer-events-none' 
-             : 'opacity-100 translate-y-0'
-         }`}>
-            <RecordButton userId={userId} onUploadSuccess={fetchRecords} isMobile={viewMode === 'mobile'} />
-         </div>
-       )}
+       <RecordButton userId={userId} onUploadSuccess={fetchRecords} />
 
        {/* 音频详情弹窗 */}
-       {selectedAudio && !isRecordingMode && (
+       {selectedAudio && (
          <AudioDetailOverlay
            record={selectedAudio}
            onClose={handleCloseAudioDetail}
            onNext={() => handleNavigate('next')}
            onPrev={() => handleNavigate('prev')}
-           isMobile={viewMode === 'mobile'}
-           isMinimized={isAudioDetailMinimized}
-           onMinimize={() => setIsAudioDetailMinimized(!isAudioDetailMinimized)}
          />
        )}
     </main>
