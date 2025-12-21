@@ -12,6 +12,23 @@ const nextConfig = {
         source: '/mapbox-tiles/:path*',
         destination: 'https://tiles.mapbox.com/:path*',
       },
+      // Proxy backend requests to local FastAPI server
+      {
+        source: '/api/:path*',
+        destination: 'http://127.0.0.1:8000/api/:path*',
+      },
+      {
+        source: '/users/:path*',
+        destination: 'http://127.0.0.1:8000/users/:path*',
+      },
+      {
+        source: '/static/:path*',
+        destination: 'http://127.0.0.1:8000/static/:path*',
+      },
+      {
+        source: '/health',
+        destination: 'http://127.0.0.1:8000/health',
+      },
     ]
   },
 }

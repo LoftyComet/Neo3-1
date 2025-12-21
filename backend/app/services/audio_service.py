@@ -9,14 +9,16 @@ from fastapi import UploadFile, BackgroundTasks
 from sqlalchemy.orm import Session
 from sqlalchemy import func, extract, case, desc, or_, cast, String, and_
 from geoalchemy2.elements import WKTElement
-from backend.app import schemas, crud
-from backend.app.models.audio import AudioRecord
-from backend.app.services.ai_service import ai_service
-from backend.app.core.database import SessionLocal
+from app import schemas, crud
+from app.models.audio import AudioRecord
+from app.services.ai_service import ai_service
+from app.core.database import SessionLocal
 
 class AudioService:
     def __init__(self):
-        self.upload_dir = "backend/static/uploads"
+        # Use absolute path for upload directory
+        BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+        self.upload_dir = os.path.join(BASE_DIR, "static", "uploads")
         os.makedirs(self.upload_dir, exist_ok=True)
         
         # --- 向量检索配置 ---

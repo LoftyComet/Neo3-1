@@ -1,6 +1,8 @@
 import { AudioRecord } from "@/types";
 
-const API_BASE_URL = "http://localhost:8000";
+// When using Next.js rewrites (proxy), we don't need a full URL.
+// Requests to "/api/..." will be automatically proxied to the backend.
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "";
 
 // Helper to map backend response to frontend type
 const mapRecord = (record: any): AudioRecord => {
