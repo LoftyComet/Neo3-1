@@ -36,18 +36,18 @@ class AIService:
             result = response.json()
             return result.get("response", "")
 
-    async def _call_llm(self, transcript: str, emotion: str, time_period: str = "Unknown") -> Dict[str, Any]:
+    async def _call_llm(self, transcript: str, emotion: str) -> Dict[str, Any]:
         """
         Call LLM to generate tags, story and structure the final output.
         """
-        system_prompt = f"""
-        你是一个专业的音频内容分析师。你的任务是根据提供的音频“转录内容”、“情感氛围”和“录制时段”，生成一份完整的分析报告。
+        system_prompt = """
+        你是一个专业的音频内容分析师。你的任务是根据提供的音频“转录内容”和“情感氛围”，生成一份完整的分析报告。
         
         请输出标准的 JSON 格式，包含以下字段：
         1. `transcript`: 直接使用提供的转录内容。
         2. `emotion`: 直接使用提供的情感氛围。
-        3. `emotion_tags`: 根据情感氛围和录制时段，扩展生成 3-5 个具体的场景或情感标签（例如：下雨、夜晚、孤独、咖啡馆）。
-        4. `story`: 根据转录内容、情感氛围和录制时段，创作一个 50-100 字的微型故事。故事要有画面感，能够唤起听众的共鸣。
+        3. `emotion_tags`: 根据情感氛围，扩展生成 3-5 个具体的场景或情感标签（例如：下雨、夜晚、孤独、咖啡馆）。
+        4. `story`: 根据转录内容和情感氛围，创作一个 50-100 字的微型故事。故事要有画面感，能够唤起听众的共鸣。
         
         请确保输出是合法的 JSON 格式。
         """
@@ -55,7 +55,6 @@ class AIService:
         user_prompt = f"""
         转录内容: {transcript}
         情感氛围: {emotion}
-        录制时段: {time_period}
         """
 
         try:
@@ -109,17 +108,17 @@ class AIService:
                 "story": "服务暂时不可用"
             }
 
-    async def process_audio(self, file_bytes: bytes, filename: str = "audio.wav", time_period: str = "Unknown") -> Dict[str, Any]:
+    async def process_audio(self, file_bytes: bytes, filename: str = "audio.wav") -> Dict[str, Any]:
         """
         Process audio file using the external AI API.
         Returns a dictionary with transcript, emotion, emotion_tags, and story.
         """
         
         # Prompt 1: Get Content (Transcript)
-        prompt_content = f"请简要描述这段录音的内容。录制时间段为：{time_period}。"
+        prompt_content = "请简要描述这段录音的内容"
 
         # Prompt 2: Get Emotion
-        prompt_emotion = f"请概括这段录音的情感氛围。录制时间段为：{time_period}。"
+        prompt_emotion = "请概括这段录音的情感氛围"
 
         try:
             # Step 1: Execute initial analysis requests in parallel
@@ -135,7 +134,7 @@ class AIService:
             logger.info(f"Initial Analysis - Transcript: {transcript}, Emotion: {emotion}")
 
             # Step 2: Call LLM for enrichment and formatting
-            final_result = await self._call_llm(transcript, emotion, time_period)
+            final_result = await self._call_llm(transcript, emotion)
             
             # Map 'emotion_tags' to 'scene_tags' if needed by DB, or keep as is.
             # Assuming DB uses 'scene_tags', let's ensure compatibility.
