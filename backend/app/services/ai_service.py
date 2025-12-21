@@ -167,6 +167,20 @@ class AIService:
                 "story": ""
             }
 
+    async def regenerate_content(self, transcript: str, emotion: str) -> Dict[str, Any]:
+        """
+        Regenerate tags and story based on transcript and emotion.
+        """
+        result = await self._call_llm(transcript, emotion)
+        
+        # Ensure compatibility with DB schema
+        return {
+            "transcript": result.get("transcript", transcript),
+            "emotion_tag": result.get("emotion", emotion),
+            "scene_tags": result.get("emotion_tags", []),
+            "story": result.get("story", "")
+        }
+
     def _extract_json(self, text: str) -> Optional[Dict[str, Any]]:
         """
         Helper to extract JSON from a string that might contain markdown.

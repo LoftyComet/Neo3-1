@@ -68,6 +68,26 @@ export const api = {
     return mapRecord(data);
   },
 
+  updateRecord: async (recordId: string, data: { emotion_tag?: string; scene_tags?: string[]; generated_story?: string }) => {
+    const response = await fetch(`${API_BASE_URL}/api/v1/records/${recordId}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(data),
+    });
+    if (!response.ok) throw new Error("Update failed");
+    const resData = await response.json();
+    return mapRecord(resData);
+  },
+
+  regenerateRecord: async (recordId: string) => {
+    const response = await fetch(`${API_BASE_URL}/api/v1/records/${recordId}/regenerate`, {
+      method: "POST",
+    });
+    if (!response.ok) throw new Error("Regeneration failed");
+    const data = await response.json();
+    return mapRecord(data);
+  },
+
   likeRecord: async (recordId: string) => {
     const response = await fetch(`${API_BASE_URL}/api/v1/records/${recordId}/like`, {
       method: "POST",

@@ -141,6 +141,38 @@ class AudioService:
             filters.append(kw_filter)
         return and_(*filters)
 
+    async def regenerate_record(self, db: Session, record_id: str):
+        record = crud.audio.get_record(db, record_id)
+        if not record:
+            return None
+        
+        # Use existing transcript and emotion to regenerate story and tags
+        transcript = record.transcript or ""
+        emotion = record.emotion_tag or ""
+
+        new_content = await ai_service.regenerate_content(transcript, emotion)
+        
+        update_data = {
+            "scene_tags": new_content.get("scene_tags"),
+            "generated_story": new_content.get("story")
+        }
+        
+        # Re-calculate embedding
+        text_parts = [
+            f"城市: {record.city or ''}",
+            f"标签: {', '.join(new_content.get('scene_tags', []))}",
+            f"情感: {emotion}",
+            f"内容: {new_content.get('story') or transcript or ''}"
+        ]
+        text_to_embed = " ".join(text_parts)
+        
+        if text_to_embed and self.embedding_api_key:
+            embedding_vector = self._get_embedding(text_to_embed)
+            if embedding_vector:
+                update_data["embedding"] = embedding_vector
+
+        return crud.audio.update_audio_record(db, record_id, update_data)
+
     async def process_audio_background(self, record_id: str, file_path: str):
         """后台任务：AI 分析 + 生成 Embedding + 更新数据库"""
         print(f"Starting background processing for record {record_id}...")

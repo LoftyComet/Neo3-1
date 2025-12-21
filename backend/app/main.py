@@ -103,6 +103,28 @@ async def upload_audio(
         background_tasks=background_tasks
     )
 
+@app.put("/api/v1/records/{record_id}", response_model=schemas.AudioRecord)
+def update_record(
+    record_id: str,
+    record_update: schemas.AudioRecordUpdate,
+    db: Session = Depends(get_db)
+):
+    update_data = record_update.dict(exclude_unset=True)
+    updated_record = crud.audio.update_audio_record(db, record_id, update_data)
+    if not updated_record:
+        raise HTTPException(status_code=404, detail="Record not found")
+    return updated_record
+
+@app.post("/api/v1/records/{record_id}/regenerate", response_model=schemas.AudioRecord)
+async def regenerate_record(
+    record_id: str,
+    db: Session = Depends(get_db)
+):
+    updated_record = await audio_service.regenerate_record(db, record_id)
+    if not updated_record:
+        raise HTTPException(status_code=404, detail="Record not found")
+    return updated_record
+
 @app.get("/api/v1/records/map", response_model=list[schemas.AudioRecord])
 def get_map_records(
     skip: int = 0, 

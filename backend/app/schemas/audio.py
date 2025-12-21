@@ -17,6 +17,12 @@ class AudioRecordBase(BaseModel):
     city: Optional[str] = None
     district: Optional[str] = None
 
+class AudioRecordUpdate(BaseModel):
+    emotion_tag: Optional[str] = None
+    scene_tags: Optional[List[str]] = None
+    generated_story: Optional[str] = None
+    transcript: Optional[str] = None
+
 class AudioRecordCreate(AudioRecordBase):
     # 上传时可能只需要 lat/lng，其他由后台生成
     pass
