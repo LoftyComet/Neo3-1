@@ -279,5 +279,6 @@ export const RecordButton: React.FC<RecordButtonProps> = ({ userId, onUploadSucc
         )}
       </AnimatePresence>
     </div>
+    </>
   );
 };
