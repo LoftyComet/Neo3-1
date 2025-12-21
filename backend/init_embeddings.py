@@ -5,9 +5,9 @@ import asyncio
 # 将当前目录添加到 Python 跑道，确保能导入 backend 模块
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from app.core.database import SessionLocal
-from app.models.audio import AudioRecord
-from app.services.audio_service import audio_service
+from backend.app.core.database import SessionLocal
+from backend.app.models.audio import AudioRecord
+from backend.app.services.audio_service import audio_service
 
 def init_embeddings():
     db = SessionLocal()

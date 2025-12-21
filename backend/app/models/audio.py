@@ -5,7 +5,7 @@ from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
 from geoalchemy2 import Geometry
 from pgvector.sqlalchemy import Vector
-from app.core.database import Base
+from backend.app.core.database import Base
 
 class AudioRecord(Base):
     __tablename__ = "audio_records"
