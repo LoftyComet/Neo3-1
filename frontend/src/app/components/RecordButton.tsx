@@ -197,9 +197,10 @@ export const RecordButton: React.FC<RecordButtonProps> = ({ userId, onUploadSucc
           <motion.div 
             key="uploading"
             initial={{ scale: 0 }} animate={{ scale: 1 }} exit={{ scale: 0 }}
-            className="w-16 h-16 bg-black/60 backdrop-blur-md rounded-full flex items-center justify-center border border-white/10"
+            className="flex flex-col items-center justify-center gap-2 bg-black/80 backdrop-blur-md p-4 rounded-2xl border border-white/10"
           >
-            <Loader2 className="text-white animate-spin" />
+            <Loader2 className="text-white animate-spin w-8 h-8" />
+            <span className="text-white text-xs whitespace-nowrap">正在分析音频，请耐心等待10-20秒...</span>
           </motion.div>
         ) : recordedBlob ? (
           <motion.div

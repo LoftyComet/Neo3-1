@@ -91,10 +91,10 @@ def read_user_records(user_id: str, skip: int = 0, limit: int = 100, db: Session
 
 @app.post("/api/v1/records/upload", response_model=schemas.AudioRecord)
 async def upload_audio(
-    background_tasks: BackgroundTasks,
     latitude: float = Form(...),
     longitude: float = Form(...),
     user_id: Optional[str] = Form(None),
+    time_period: str = Form("Unknown"),
     file: UploadFile = File(...),
     db: Session = Depends(get_db)
 ):
@@ -104,7 +104,7 @@ async def upload_audio(
         latitude=latitude,
         longitude=longitude,
         user_id=user_id,
-        background_tasks=background_tasks
+        time_period=time_period
     )
 
 @app.get("/api/v1/records/map", response_model=list[schemas.AudioRecord])

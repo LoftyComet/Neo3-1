@@ -56,6 +56,17 @@ export const api = {
     formData.append("file", file, "recording.webm");
     formData.append("latitude", lat.toString());
     formData.append("longitude", lng.toString());
+    
+    // Determine time period
+    const hour = new Date().getHours();
+    let timePeriod = "Unknown";
+    if (hour >= 5 && hour < 12) timePeriod = "Morning";
+    else if (hour >= 12 && hour < 18) timePeriod = "Afternoon";
+    else if (hour >= 18 && hour < 22) timePeriod = "Evening";
+    else timePeriod = "Night";
+    
+    formData.append("time_period", timePeriod);
+
     if (userId) {
       formData.append("user_id", userId);
     }
