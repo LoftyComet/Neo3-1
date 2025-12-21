@@ -51,6 +51,13 @@ export const api = {
     return data.map(mapRecord);
   },
 
+  getRecord: async (recordId: string): Promise<AudioRecord> => {
+    const response = await fetch(`${API_BASE_URL}/api/v1/records/${recordId}`);
+    if (!response.ok) throw new Error("Failed to fetch record");
+    const data = await response.json();
+    return mapRecord(data);
+  },
+
   uploadRecord: async (file: Blob, lat: number, lng: number, userId?: string) => {
     const formData = new FormData();
     formData.append("file", file, "recording.webm");
