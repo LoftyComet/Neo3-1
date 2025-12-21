@@ -368,10 +368,10 @@ class AudioService:
         file: UploadFile, 
         latitude: float, 
         longitude: float, 
-        user_id: str = None,
-        time_period: str = "Unknown"
+        background_tasks: BackgroundTasks,
+        user_id: str = None
     ) -> schemas.AudioRecord:
-        """Handles file upload, DB record creation, and triggers processing."""
+        """Handles file upload, DB record creation, and triggers background processing."""
         file_ext = os.path.splitext(file.filename)[1]
         if not file_ext:
             file_ext = ".wav"
@@ -392,66 +392,19 @@ class AudioService:
         if file_format == "unknown":
              file_format = file_ext.lstrip('.').lower()
 
-        # Process audio synchronously to return results immediately
-        try:
-            with open(file_path, "rb") as f:
-                file_bytes = f.read()
-            filename = os.path.basename(file_path)
-            ai_result = await ai_service.process_audio(file_bytes, filename, time_period)
-            
-            # Calculate embedding
-            text_parts = [
-                f"城市: {ai_result.get('city', '')}",
-                f"标签: {', '.join(ai_result.get('scene_tags', []))}",
-                f"情感: {ai_result.get('emotion_tag', '')}",
-                f"内容: {ai_result.get('story') or ai_result.get('transcript') or ''}"
-            ]
-            text_to_embed = " ".join(text_parts)
-            
-            embedding_vector = None
-            if text_to_embed and self.embedding_api_key:
-                embedding_vector = self._get_embedding(text_to_embed)
-            
-            if not embedding_vector:
-                embedding_vector = [0.0] * self.embedding_dim
-
-            record_create = schemas.AudioRecordCreate(
-                latitude=latitude,
-                longitude=longitude,
-                duration=duration,
-                file_size=file_size,
-                format=file_format,
-                emotion_tag=ai_result.get("emotion_tag"),
-                scene_tags=ai_result.get("scene_tags"),
-                transcript=ai_result.get("transcript"),
-                generated_story=ai_result.get("story"),
-                city=ai_result.get("city"),
-                district=ai_result.get("district")
-            )
-            
-            # Create record with all data
-            db_record = crud.audio.create_audio_record(db, record_create, file_path, user_id=user_id)
-            
-            # Update embedding manually since create_audio_record might not handle it directly if not in schema
-            # Assuming create_audio_record handles basic fields. We need to update embedding.
-            crud.audio.update_audio_record(db, str(db_record.id), {"embedding": embedding_vector})
-            
-            return db_record
-
-        except Exception as e:
-            print(f"Error processing audio: {e}")
-            # Fallback to basic record if AI fails
-            record_create = schemas.AudioRecordCreate(
-                latitude=latitude,
-                longitude=longitude,
-                duration=duration,
-                file_size=file_size,
-                format=file_format,
-                emotion_tag="Processing Failed",
-                scene_tags=[],
-                transcript="",
-                generated_story=""
-            )
-            return crud.audio.create_audio_record(db, record_create, file_path, user_id=user_id)
+        record_create = schemas.AudioRecordCreate(
+            latitude=latitude,
+            longitude=longitude,
+            duration=duration,
+            file_size=file_size,
+            format=file_format,
+            emotion_tag="Processing...",
+            scene_tags=[],
+            transcript="",
+            generated_story=""
+        )
+        db_record = crud.audio.create_audio_record(db, record_create, file_path, user_id=user_id)
+        background_tasks.add_task(self.process_audio_background, str(db_record.id), file_path)
+        return db_record
 
 audio_service = AudioService()
