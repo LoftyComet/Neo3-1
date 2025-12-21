@@ -12,14 +12,6 @@ export const MAP_CONFIG = {
   // Map style options - using basic style that's more likely to load
   MAP_STYLE: 'mapbox://styles/mapbox/streets-v12', // Changed to streets style
 
-  // Tile Layer configuration (for Leaflet)
-  // Using Gaode Map (AMap) for better performance in China
-  TILE_LAYER: {
-    url: 'https://webrd0{s}.is.autonavi.com/appmaptile?lang=zh_cn&size=1&scale=1&style=8&x={x}&y={y}&z={z}',
-    attribution: '&copy; <a href="https://www.amap.com/">Gaode Map</a>',
-    subdomains: ['1', '2', '3', '4']
-  },
-
   // Default view state
   DEFAULT_VIEW_STATE: {
     longitude: 116.4074,    // Beijing (default location)

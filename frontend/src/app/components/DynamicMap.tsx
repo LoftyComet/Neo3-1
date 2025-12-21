@@ -123,9 +123,8 @@ export default function DynamicMap({
         />
 
         <TileLayer
-          attribution={MAP_CONFIG.TILE_LAYER.attribution}
-          url={MAP_CONFIG.TILE_LAYER.url}
-          subdomains={MAP_CONFIG.TILE_LAYER.subdomains}
+          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
         />
 
         {/* User location marker */}
