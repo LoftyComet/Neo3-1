@@ -195,18 +195,10 @@ export default function LeafletMap({
       />
       
       {/* Layer Management for "Discovery" Effect */}
-      <Pane name="color-pane" style={{ zIndex: 200 }} />
-      <Pane name="grayscale-pane" style={{ zIndex: 201 }} />
+      <Pane name="grayscale-pane" style={{ zIndex: 200 }} />
+      <Pane name="color-pane" style={{ zIndex: 201 }} />
 
-      {/* Bottom Layer: Colorful Map (Revealed when "lit") */}
-      <TileLayer
-        attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-        url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-        className="map-tiles-color"
-        pane="color-pane"
-      />
-
-      {/* Top Layer: Grayscale Map (Default view, clipped by DiscoveryLayer) */}
+      {/* Bottom Layer: Grayscale Map (Always visible background) */}
       <TileLayer
         attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
         url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
@@ -214,11 +206,19 @@ export default function LeafletMap({
         pane="grayscale-pane"
       />
 
-      {/* The Mask Logic */}
+      {/* Top Layer: Colorful Map (Visible only in "lit" areas via clipPath) */}
+      <TileLayer
+        attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+        url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+        className="map-tiles-color"
+        pane="color-pane"
+      />
+
+      {/* The Mask Logic - Applied to Color Pane */}
       <DiscoveryLayer 
         visitedAudioIds={visitedAudioIds || new Set()} 
         audioRecords={audioRecords} 
-        paneName="grayscale-pane" 
+        paneName="color-pane" 
       />
 
       {/* Connection Lines */}

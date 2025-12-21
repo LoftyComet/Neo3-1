@@ -14,33 +14,38 @@ export default function DiscoveryLayer({ visitedAudioIds, audioRecords, paneName
   const [pathD, setPathD] = useState<string>('');
   const [uniqueId] = useState(() => `discovery-clip-${Math.random().toString(36).substr(2, 9)}`);
   
-  // Radius of the "light" in pixels
-  const LIGHT_RADIUS = 150; 
+  // Fixed geographic radius in meters (e.g. 500m radius)
+  const RADIUS_METERS = 500; 
 
   const updatePath = () => {
     if (!map) return;
 
-    const size = map.getSize();
-    const width = size.x;
-    const height = size.y;
+    // Calculate pixel radius based on current zoom and center latitude to keep geographic size constant
+    const center = map.getCenter();
+    const centerPoint = map.latLngToContainerPoint(center);
+    
+    // Calculate a point RADIUS_METERS east of center
+    // 1 degree longitude ~= 111320 * cos(lat) meters
+    const metersPerDegree = 111320 * Math.cos(center.lat * Math.PI / 180);
+    const deltaLng = RADIUS_METERS / metersPerDegree;
+    const eastPoint = map.latLngToContainerPoint([center.lat, center.lng + deltaLng]);
+    
+    // The radius in pixels
+    const r = Math.abs(eastPoint.x - centerPoint.x);
 
-    // 1. Start with a full rectangle covering the map view
-    let d = `M0,0 L${width},0 L${width},${height} L0,${height} Z`;
+    // Just circles, no rectangle. 
+    // We will apply this to the COLOR layer, so we want to SHOW (fill) the circles.
+    let d = '';
 
-    // 2. Cut out circles for each visited record
-    // Using EvenOdd rule, drawing direction doesn't matter as much, 
-    // but keeping them consistent is good practice.
     visitedAudioIds.forEach(id => {
       const record = audioRecords.find(r => r.id === id);
       if (record) {
         const point = map.latLngToContainerPoint([record.latitude, record.longitude]);
         const x = point.x;
         const y = point.y;
-        const r = LIGHT_RADIUS;
-
-        if (x > -r && x < width + r && y > -r && y < height + r) {
-           d += ` M${x - r},${y} A${r},${r} 0 1,0 ${x + r},${y} A${r},${r} 0 1,0 ${x - r},${y}`;
-        }
+        
+        // Draw circle
+        d += ` M${x - r},${y} A${r},${r} 0 1,0 ${x + r},${y} A${r},${r} 0 1,0 ${x - r},${y}`;
       }
     });
 
@@ -65,13 +70,10 @@ export default function DiscoveryLayer({ visitedAudioIds, audioRecords, paneName
     }
   }, [uniqueId, paneName, map]);
 
-  // Render the SVG definition into the map container or body
-  // We use a portal to put it in the body to ensure it's available globally but hidden
-  // Actually, putting it in the map container is fine.
   return (
     <svg style={{ position: 'absolute', width: 0, height: 0, pointerEvents: 'none' }}>
       <defs>
-        <clipPath id={uniqueId} clipRule="evenodd">
+        <clipPath id={uniqueId} clipRule="nonzero">
           <path d={pathD} />
         </clipPath>
       </defs>
