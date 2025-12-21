@@ -128,7 +128,12 @@ body {
 /* Leaflet Map Customization */
 .map-tiles-dark {
   filter: invert(1) grayscale(1) contrast(1.2) brightness(0.8);
-  opacity: 0.6;
+  opacity: 1; /* Ensure full opacity for the mask layer */
+}
+
+.map-tiles-color {
+  filter: brightness(0.6) contrast(1.2) saturate(1.2);
+  opacity: 1;
 }
 
 .custom-leaflet-marker {

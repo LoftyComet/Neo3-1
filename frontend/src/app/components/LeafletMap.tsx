@@ -1,12 +1,13 @@
 "use client";
 
 import { useEffect, useState, useRef } from 'react';
-import { MapContainer, TileLayer, Marker, useMap, Polyline } from 'react-leaflet';
+import { MapContainer, TileLayer, Marker, useMap, Polyline, Pane } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { AudioRecord } from '@/types';
 import { MAP_CONFIG } from '@/config/map';
+import DiscoveryLayer from './DiscoveryLayer';
 
 // Fix for default marker icons in Next.js
 const DefaultIcon = L.icon({
@@ -193,11 +194,31 @@ export default function LeafletMap({
         isRecordingMode={isRecordingMode}
       />
       
-      {/* Dark Mode Tiles */}
+      {/* Layer Management for "Discovery" Effect */}
+      <Pane name="color-pane" style={{ zIndex: 200 }} />
+      <Pane name="grayscale-pane" style={{ zIndex: 201 }} />
+
+      {/* Bottom Layer: Colorful Map (Revealed when "lit") */}
+      <TileLayer
+        attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+        url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+        className="map-tiles-color"
+        pane="color-pane"
+      />
+
+      {/* Top Layer: Grayscale Map (Default view, clipped by DiscoveryLayer) */}
       <TileLayer
         attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
         url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
         className="map-tiles-dark"
+        pane="grayscale-pane"
+      />
+
+      {/* The Mask Logic */}
+      <DiscoveryLayer 
+        visitedAudioIds={visitedAudioIds || new Set()} 
+        audioRecords={audioRecords} 
+        paneName="grayscale-pane" 
       />
 
       {/* Connection Lines */}
