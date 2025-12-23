@@ -2,6 +2,11 @@
 > 1. 本项目采用 **Apache-2.0 许可证 + 附加条款** 双重授权。  
 > 2. **任何商业用途必须事先获得书面授权**；  
 > 3. **使用本代码发表科研论文者，必须将四位核心 Contributor 列为作者**（详见 [ADDITIONAL_TERMS.md](./ADDITIONAL_TERMS.md)）。
+# <div align="right">
+   <a href="./README.en.md" style="text-decoration:none;">
+      <img src="https://img.shields.io/badge/English-Version-blue?logo=readme&logoColor=white" alt="English Version" />
+   </a>
+</div>
 # EchoMap
 
 ## 环境配置
