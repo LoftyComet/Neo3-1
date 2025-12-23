@@ -11,14 +11,14 @@ logger = logging.getLogger(__name__)
 class AIService:
     def __init__(self):
         # Configuration from example.py
-        self.api_url = "https://u570751-8ln3hmx6jjjqkskb3rez.westc.gpuhub.com:8443/analyze"
+        self.api_url = "https://u570751-b44d-df1b78e6.westc.gpuhub.com:8443/analyze"
         self.timeout = 60.0 # seconds
 
         # LLM Configuration (OpenAI Compatible)
         # TODO: Move these to environment variables or config file
-        self.llm_api_key = os.getenv("LLM_API_KEY", "sk-caf4db3895534e858d221506e165d93b")
-        self.llm_base_url = os.getenv("LLM_BASE_URL", "https://api.deepseek.com")
-        self.llm_model_name = os.getenv("LLM_MODEL_NAME", "deepseek-chat")
+        self.llm_api_key = os.getenv("LLM_API_KEY", "sk-irmlnxewkglpbsrdunduprnptlesoersihmxptwszornttyw")
+        self.llm_base_url = os.getenv("LLM_BASE_URL", "https://api.siliconflow.cn/v1/")
+        self.llm_model_name = os.getenv("LLM_MODEL_NAME", "deepseek-ai/DeepSeek-V3.2")
 
     async def _call_api(self, file_bytes: bytes, filename: str, prompt: str) -> str:
         """Helper to call the AI API with a specific prompt."""

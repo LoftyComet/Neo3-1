@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { AudioRecord } from '@/types';
 import { api } from '@/services/api';
 import { X, RefreshCw, Check, Loader2 } from 'lucide-react';
@@ -15,34 +15,6 @@ export const ConfirmationModal: React.FC<ConfirmationModalProps> = ({ record, on
   const [story, setStory] = useState(record.story);
   const [isRegenerating, setIsRegenerating] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
-
-  // Poll for updates if processing
-  useEffect(() => {
-    let intervalId: NodeJS.Timeout;
-
-    // Check if we need to poll (if emotion is "Processing..." or story is default)
-    const needsPolling = emotion === "Processing..." || story === "No story generated yet.";
-
-    if (needsPolling) {
-      intervalId = setInterval(async () => {
-        try {
-          const updatedRecord = await api.getRecord(record.id);
-          // Update state if we have new data
-          if (updatedRecord.emotion !== "Processing..." && updatedRecord.story !== "No story generated yet.") {
-            setEmotion(updatedRecord.emotion);
-            setTags(updatedRecord.tags.join(', '));
-            setStory(updatedRecord.story);
-          }
-        } catch (error) {
-          console.error("Error polling record status:", error);
-        }
-      }, 2000); // Poll every 2 seconds
-    }
-
-    return () => {
-      if (intervalId) clearInterval(intervalId);
-    };
-  }, [emotion, story, record.id]);
 
   const handleRegenerate = async () => {
     setIsRegenerating(true);

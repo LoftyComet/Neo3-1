@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Mic, Square, Loader2, Play, Pause, Check, X, RotateCcw } from 'lucide-react';
 import { api } from '@/services/api';
 import { ConfirmationModal } from './ConfirmationModal';
+import { ProcessingAnimation } from './ProcessingAnimation';
 import { AudioRecord } from '@/types';
 
 interface RecordButtonProps {
@@ -30,6 +31,29 @@ export const RecordButton: React.FC<RecordButtonProps> = ({ userId, onUploadSucc
   const analyserRef = useRef<AnalyserNode | null>(null);
   const animationFrameRef = useRef<number>();
   const audioRef = useRef<HTMLAudioElement | null>(null);
+
+  // Polling for processing status
+  useEffect(() => {
+    let intervalId: NodeJS.Timeout;
+
+    if (uploadedRecord && (uploadedRecord.emotion === "Processing..." || uploadedRecord.story === "No story generated yet.")) {
+      intervalId = setInterval(async () => {
+        try {
+          const updatedRecord = await api.getRecord(uploadedRecord.id);
+          // Update state if we have new data (processing complete)
+          if (updatedRecord.emotion !== "Processing..." && updatedRecord.story !== "No story generated yet.") {
+            setUploadedRecord(updatedRecord);
+          }
+        } catch (error) {
+          console.error("Error polling record status:", error);
+        }
+      }, 2000); // Poll every 2 seconds
+    }
+
+    return () => {
+      if (intervalId) clearInterval(intervalId);
+    };
+  }, [uploadedRecord]);
 
   useEffect(() => {
     if (previewUrl) {
@@ -204,9 +228,13 @@ export const RecordButton: React.FC<RecordButtonProps> = ({ userId, onUploadSucc
   // 动态计算光晕大小
   const glowSize = Math.max(1, 1 + volume / 50); 
 
+  const isProcessing = uploadedRecord && (uploadedRecord.emotion === "Processing..." || uploadedRecord.story === "No story generated yet.");
+
   return (
     <>
-      {uploadedRecord && (
+      {isProcessing && <ProcessingAnimation />}
+      
+      {uploadedRecord && !isProcessing && (
         <ConfirmationModal 
           record={uploadedRecord}
           onConfirm={handleModalConfirm}

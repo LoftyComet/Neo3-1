@@ -39,10 +39,21 @@ npm install
 `docker exec -it echomap-db psql -U postgres -d echomap -c "CREATE EXTENSION IF NOT EXISTS postgis;"
 docker exec -it echomap-db psql -U postgres -d echomap -c "CREATE EXTENSION IF NOT EXISTS vector;"`
 
+### 后端环境
+运行 `pip install -r .\backend\requirements.txt` 安装依赖
+
+### 云端模型部署
+租用一个云端GPU服务器，此处以AutoDL 4090 为例
+1. 配置环境变量
+`pip install -r .\docs\requirements.txt` 
+2. 下载模型
+`python daownload.py`
+3. 运行 `python server.py` 开始模型推理，并将api暴露给6006端口，然后在autodl控制台"自定义服务"中查看6006对应的链接，即为API URL
+
 
 ## 数据初始化 (重要)
 
-为了启用**语义搜索**和**时空共鸣**功能，需要初始化数据库并生成向量数据。
+为了启用**语义搜索**和**时空共鸣**功能，需要初始化数据库并生成演示向量数据。
 
 ### 1. 导入基础数据
 使用数据库管理工具（如 DBeaver, pgAdmin）或命令行，运行 `SQL.txt` 中的 SQL 语句。这将插入 100 条分布在全国各地的合成音频数据。
