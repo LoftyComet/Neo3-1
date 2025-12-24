@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import MapComponent from "@/app/components/MapComponent";
 import { RecordButton } from "@/app/components/RecordButton";
 import { AudioDetailOverlay } from "@/app/components/AudioDetailOverlay";
@@ -18,39 +19,31 @@ export default function Home() {
   const [visitedAudioIds, setVisitedAudioIds] = useState<Set<string>>(new Set());
   const [isLocating, setIsLocating] = useState(false);
   const [showDiscoveryPrompt, setShowDiscoveryPrompt] = useState(false);
+  const router = useRouter();
 
 
   // Initialize User
   useEffect(() => {
     const initUser = async () => {
-      let storedUserId = localStorage.getItem("sound_memory_user_id");
+      const token = localStorage.getItem("token");
       
-      if (storedUserId) {
-        try {
-          // Verify if user exists in backend
-          await api.getUser(storedUserId);
-        } catch (e) {
-          console.warn("Stored user not found in backend, creating new one.");
-          storedUserId = null;
-          localStorage.removeItem("sound_memory_user_id");
-        }
+      if (!token) {
+        router.push("/login");
+        return;
       }
 
-      if (!storedUserId) {
-        try {
-          // Create a guest user
-          const randomSuffix = Math.floor(Math.random() * 100000);
-          const newUser = await api.createUser(`guest_${randomSuffix}`, `guest_${randomSuffix}@example.com`);
-          storedUserId = newUser.id;
-          localStorage.setItem("sound_memory_user_id", storedUserId!);
-        } catch (e) {
-          console.error("Failed to create guest user", e);
-        }
+      try {
+        const user = await api.getMe(token);
+        setUserId(user.id);
+        localStorage.setItem("sound_memory_user_id", user.id);
+      } catch (e) {
+        console.error("Failed to validate token", e);
+        localStorage.removeItem("token");
+        router.push("/login");
       }
-      if (storedUserId) setUserId(storedUserId);
     };
     initUser();
-  }, []);
+  }, [router]);
 
   // Fetch records
   const fetchRecords = async () => {

@@ -30,6 +30,10 @@ const nextConfig = {
         destination: 'http://127.0.0.1:8000/health',
       },
       {
+        source: '/token',
+        destination: 'http://127.0.0.1:8000/token',
+      },
+      {
         source: '/audio/:path*',
         destination: 'http://127.0.0.1:8000/audio/:path*',
       },

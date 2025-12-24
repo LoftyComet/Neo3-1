@@ -9,6 +9,7 @@ from sqlalchemy.orm import Session
 from app import models, schemas, crud
 from app.core.database import SessionLocal, engine
 from app.services import audio_service
+from app.routers import auth
 
 # 创建必要的数据库扩展
 #Deli added 
@@ -27,6 +28,8 @@ except Exception as e:
 models.user.Base.metadata.create_all(bind=engine)
 
 app = FastAPI(title="Sound Memory API")
+
+app.include_router(auth.router, tags=["auth"])
 
 # Allow CORS for frontend
 app.add_middleware(

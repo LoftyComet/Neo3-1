@@ -24,6 +24,7 @@ export const RecordButton: React.FC<RecordButtonProps> = ({ userId, onUploadSucc
   const [isPlayingPreview, setIsPlayingPreview] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
+  const [uploadedRecord, setUploadedRecord] = useState<AudioRecord | null>(null);
   
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioContextRef = useRef<AudioContext | null>(null);
@@ -180,6 +181,14 @@ export const RecordButton: React.FC<RecordButtonProps> = ({ userId, onUploadSucc
     setIsPlayingPreview(false);
   };
 
+  const handleModalConfirm = () => {
+    setUploadedRecord(null);
+  };
+
+  const handleModalCancel = () => {
+    setUploadedRecord(null);
+  };
+
   const handleConfirmUpload = async () => {
     if (recordedBlob) {
       await handleUpload(recordedBlob);
@@ -203,7 +212,8 @@ export const RecordButton: React.FC<RecordButtonProps> = ({ userId, onUploadSucc
   const performUpload = async (blob: Blob, lat: number, lng: number) => {
     setIsUploading(true);
     try {
-      await api.uploadRecord(blob, lat, lng, userId);
+      const record = await api.uploadRecord(blob, lat, lng, userId);
+      setUploadedRecord(record);
       if (onUploadSuccess) onUploadSuccess();
     } catch (error) {
       console.error("Upload failed", error);

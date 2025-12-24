@@ -26,13 +26,35 @@ const mapRecord = (record: any): AudioRecord => {
 
 export const api = {
   // User
-  createUser: async (username: string, email: string) => {
+  createUser: async (username: string, email: string, password?: string) => {
     const response = await fetch(`${API_BASE_URL}/users/`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ username, email, password: "password" }), // Default password for guest
+      body: JSON.stringify({ username, email, password: password || "password" }), // Default password for guest
     });
     if (!response.ok) throw new Error("Failed to create user");
+    return response.json();
+  },
+
+  login: async (username: string, password: string) => {
+    const formData = new FormData();
+    formData.append('username', username);
+    formData.append('password', password);
+    const response = await fetch(`${API_BASE_URL}/token`, {
+      method: "POST",
+      body: formData,
+    });
+    if (!response.ok) throw new Error("Login failed");
+    return response.json();
+  },
+
+  getMe: async (token: string) => {
+    const response = await fetch(`${API_BASE_URL}/users/me`, {
+      headers: {
+        "Authorization": `Bearer ${token}`
+      }
+    });
+    if (!response.ok) throw new Error("Failed to get user info");
     return response.json();
   },
 
